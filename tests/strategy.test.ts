@@ -53,10 +53,19 @@ describe('document-only strategy composer', () => {
     )
   })
 
-  it('uses a discovery-call CTA for high-priced offers', () => {
-    const strategy = strategyFor({ price: 1_500 })
+  it('uses a discovery-call CTA for high-priced euro offers', () => {
+    const strategy = strategyFor({ currency: 'EUR', price: 1_500 })
 
     expect(strategy.recommendations.some((item) => item.id === 'REC-CTA')).toBe(true)
+  })
+
+  it('sends non-euro price thresholds to coach review instead of converting silently', () => {
+    const strategy = strategyFor({ currency: 'USD', price: 1_500, offerType: 'group' })
+
+    expect(strategy.recommendations.some((item) => item.id === 'REC-CTA')).toBe(false)
+    expect(strategy.coachDecisions).toContain(
+      'The source defines the discovery-call price threshold only in euros; no conversion rule is defined for this currency.',
+    )
   })
 
   it('keeps inferred formulas visible as a coach decision', () => {

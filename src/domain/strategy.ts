@@ -120,17 +120,23 @@ export const composeStrategy = (
     )
   }
 
-  if (inputs.offerType === 'one-to-one' || inputs.price > 1_000) {
+  const euroPriceNeedsDiscoveryCall = inputs.currency === 'EUR' && inputs.price > 1_000
+
+  if (inputs.offerType === 'one-to-one' || euroPriceNeedsDiscoveryCall) {
     recommendations.push({
       id: 'REC-CTA',
       title: 'Use a discovery-call CTA',
       body:
-        inputs.price > 1_000
+        euroPriceNeedsDiscoveryCall
           ? 'Personally invite engaged leads to a call before asking them to purchase this higher-priced offer.'
           : 'Send prospects to a calendar rather than directly to checkout for a one-to-one offer.',
       sourceIds: ['LS-CTA-001'],
       tone: 'primary',
     })
+  } else if (inputs.currency !== 'EUR' && inputs.price > 1_000) {
+    coachDecisions.push(
+      'The source defines the discovery-call price threshold only in euros; no conversion rule is defined for this currency.',
+    )
   }
 
   if (inputs.offerType === 'group' && selected.projectedBuyers < 6) {
