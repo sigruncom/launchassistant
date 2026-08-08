@@ -110,18 +110,18 @@ An indicative path for a small experienced team is 1–2 weeks for Phase 0, 4–
 - Existing audience/list and audience quality
 - Historical opt-in, attendance, application, sales-call, and purchase conversion rates
 - Organic versus paid acquisition mix, cost per lead, and available budget
-- Launch dates, runway, team capacity, and delivery capacity
+- Launch dates, runway, and team capacity
 - Proof level, prior-launch experience, offer maturity, and channel readiness
 
 ### Calculator outputs
 
-- Required sales and maximum feasible client intake or delivery capacity
+- Required sales
 - Required offer exposure, calls, attendees, registrations, leads, and estimated reach
 - Paid lead requirement, acquisition cost, and budget where applicable
 - Gross revenue, expected collected cash, variable cost, contribution, and margin
 - Conservative, base, and stretch scenarios
 - The assumptions with the greatest sensitivity
-- Capacity conflicts, missing inputs, and Sigrun-defined warning conditions
+- Missing inputs and Sigrun-defined warning conditions
 
 The exact funnel stages should follow Sigrun's actual launch archetypes. The engine should work backwards from the goal, retain every formula and assumption, and assign a `calculator_version` to every saved result.
 

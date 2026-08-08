@@ -133,12 +133,6 @@ export const composeStrategy = (
     })
   }
 
-  if (selected.capacityConflict) {
-    coachDecisions.push(
-      `The goal requires ${selected.buyersRequired} buyers but delivery capacity is ${inputs.capacity}.`,
-    )
-  }
-
   if (inputs.offerType === 'group' && selected.projectedBuyers < 6) {
     coachDecisions.push('Projected buyers are below the six-person minimum stated for a group program.')
   }

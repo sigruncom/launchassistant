@@ -196,13 +196,6 @@ function App() {
                   />
                 </div>
 
-                <NumberField
-                  id="capacity"
-                  label="Maximum buyers you can serve"
-                  hint="We will flag a goal that exceeds delivery capacity."
-                  value={inputs.capacity}
-                  onChange={(value) => update('capacity', value)}
-                />
               </div>
             ) : null}
 

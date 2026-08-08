@@ -27,7 +27,6 @@ export type LaunchScenario = {
   projectedBuyers: number
   projectedRevenueCents: number
   registrationGapAfterBudget: number
-  capacityConflict: boolean
   trace: FormulaTrace[]
 }
 
@@ -109,7 +108,6 @@ export const calculateLaunch = (rawInputs: LaunchInputs): LaunchCalculation => {
       projectedBuyers,
       projectedRevenueCents,
       registrationGapAfterBudget,
-      capacityConflict: buyersRequired > inputs.capacity,
       trace: [
         {
           id: 'FORMULA-BUYERS-001',
