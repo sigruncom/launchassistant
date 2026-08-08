@@ -8,9 +8,15 @@ import {
 } from './domain/schema'
 import { composeStrategy } from './domain/strategy'
 import { ChoiceGroup, NumberField, ToggleField } from './components/Fields'
+import { OfferEconomicsFields } from './components/OfferEconomicsFields'
 import { ScenarioSummary } from './components/ScenarioSummary'
 import { StrategyView } from './components/StrategyView'
 import { VariantNavigation } from './components/VariantNavigation'
+import {
+  offerEconomicsDraftFromNumbers,
+  offerEconomicsErrors,
+} from './domain/offerEconomics'
+import { useOfferEconomics } from './hooks/useOfferEconomics'
 
 const steps = [
   { number: '01', short: 'Offer', kicker: 'The offer', title: 'What are you launching?' },
@@ -31,15 +37,33 @@ function App() {
   const [inputs, setInputs] = useState<LaunchInputs>(demoInputs)
   const [activeStep, setActiveStep] = useState<StepIndex>(0)
   const [announcement, setAnnouncement] = useState('Demo values loaded. Nothing is saved.')
+  const economics = useOfferEconomics(
+    offerEconomicsDraftFromNumbers(demoInputs.price, demoInputs.revenueGoal),
+  )
 
-  const validation = useMemo(() => launchInputSchema.safeParse(inputs), [inputs])
+  const resolvedInputs = useMemo<LaunchInputs | null>(
+    () =>
+      economics.result.success
+        ? {
+            ...inputs,
+            price: economics.result.numbers.price,
+            revenueGoal: economics.result.numbers.revenueGoal,
+          }
+        : null,
+    [economics.result, inputs],
+  )
+  const validation = useMemo(
+    () => (resolvedInputs ? launchInputSchema.safeParse(resolvedInputs) : null),
+    [resolvedInputs],
+  )
+  const validInputs = validation?.success ? validation.data : null
   const calculation = useMemo(
-    () => (validation.success ? calculateLaunch(validation.data) : null),
-    [validation],
+    () => (validInputs ? calculateLaunch(validInputs) : null),
+    [validInputs],
   )
   const strategy = useMemo(
-    () => (calculation ? composeStrategy(inputs, calculation) : null),
-    [inputs, calculation],
+    () => (validInputs && calculation ? composeStrategy(validInputs, calculation) : null),
+    [validInputs, calculation],
   )
 
   const update = <Key extends keyof LaunchInputs>(key: Key, value: LaunchInputs[Key]) => {
@@ -47,7 +71,7 @@ function App() {
   }
 
   const moveTo = (step: StepIndex) => {
-    if (!validation.success && step > activeStep) {
+    if (!validInputs && step > activeStep) {
       setAnnouncement('Please correct the highlighted assumptions before continuing.')
       return
     }
@@ -59,19 +83,24 @@ function App() {
 
   const loadDemo = () => {
     setInputs(demoInputs)
+    economics.reset(offerEconomicsDraftFromNumbers(demoInputs.price, demoInputs.revenueGoal))
     setActiveStep(0)
     setAnnouncement('Demo values restored. Nothing is saved.')
   }
 
   const startOver = () => {
     setInputs(blankInputs)
+    economics.reset({ price: '', spotsToSell: '', revenueGoal: '' })
     setActiveStep(0)
     setAnnouncement('The form was cleared. Nothing was retained.')
   }
 
-  const errors = validation.success
-    ? []
-    : validation.error.issues.map((issue) => issue.message)
+  const errors = [
+    ...offerEconomicsErrors(economics.result),
+    ...(validation && !validation.success
+      ? validation.error.issues.map((issue) => issue.message)
+      : []),
+  ]
 
   return (
     <div className="app-shell">
@@ -164,40 +193,36 @@ function App() {
                   ]}
                 />
 
-                <div className="form-grid form-grid--3">
-                  <div className="field">
-                    <label htmlFor="currency">Currency</label>
-                    <select
-                      id="currency"
-                      className="select-input"
-                      value={inputs.currency}
-                      onChange={(event) =>
-                        update('currency', event.target.value as LaunchInputs['currency'])
-                      }
-                    >
-                      <option value="EUR">EUR · €</option>
-                      <option value="USD">USD · $</option>
-                      <option value="GBP">GBP · £</option>
-                    </select>
-                  </div>
-                  <NumberField
-                    id="price"
-                    label="Price per buyer"
-                    prefix={currencySymbol[inputs.currency]}
-                    value={inputs.price}
-                    step={1}
-                    onChange={(value) => update('price', value)}
-                  />
-                  <NumberField
-                    id="revenue-goal"
-                    label="Revenue goal"
-                    prefix={currencySymbol[inputs.currency]}
-                    value={inputs.revenueGoal}
-                    step={100}
-                    onChange={(value) => update('revenueGoal', value)}
-                  />
+                <div className="field economics-currency-field">
+                  <label htmlFor="currency">Currency</label>
+                  <select
+                    id="currency"
+                    className="select-input"
+                    value={inputs.currency}
+                    onChange={(event) =>
+                      update('currency', event.target.value as LaunchInputs['currency'])
+                    }
+                  >
+                    <option value="EUR">EUR · €</option>
+                    <option value="USD">USD · $</option>
+                    <option value="GBP">GBP · £</option>
+                  </select>
                 </div>
 
+                <OfferEconomicsFields
+                  calculatedField={economics.calculatedField}
+                  currency={inputs.currency}
+                  draft={economics.draft}
+                  idPrefix="complete-economics"
+                  result={economics.result}
+                  showErrors={!economics.result.success}
+                  variant="complete"
+                  onCalculatedFieldChange={(field) => {
+                    economics.calculateField(field)
+                    setAnnouncement(`The planner will now calculate ${field === 'spotsToSell' ? 'spots to sell' : field === 'revenueGoal' ? 'the revenue goal' : 'the price'}.`)
+                  }}
+                  onChange={economics.update}
+                />
               </div>
             ) : null}
 
@@ -363,7 +388,7 @@ function App() {
                 className="button button--primary"
                 type="button"
                 onClick={() => moveTo((activeStep + 1) as StepIndex)}
-                disabled={!validation.success}
+                disabled={!validInputs}
               >
                 {activeStep === 2 ? 'Build my strategy' : 'Continue'}{' '}
                 <span aria-hidden="true">→</span>
@@ -371,8 +396,8 @@ function App() {
             </div>
           </section>
 
-          {calculation ? (
-            <ScenarioSummary inputs={inputs} calculation={calculation} />
+          {calculation && validInputs ? (
+            <ScenarioSummary inputs={validInputs} calculation={calculation} />
           ) : (
             <aside className="calculation-panel calculation-panel--invalid" role="status">
               <p className="panel-eyebrow">Calculation paused</p>
@@ -388,10 +413,10 @@ function App() {
         </main>
       ) : null}
 
-      {activeStep === 3 && calculation && strategy ? (
+      {activeStep === 3 && validInputs && calculation && strategy ? (
         <main className="strategy-main">
           <StrategyView
-            inputs={inputs}
+            inputs={validInputs}
             calculation={calculation}
             strategy={strategy}
             onEdit={() => moveTo(2)}

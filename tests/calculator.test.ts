@@ -69,6 +69,15 @@ describe('launch calculator', () => {
     expect(() => calculateLaunch({ ...demoInputs, costPerLead: 0 })).toThrow()
   })
 
+  it('rejects prices below the supported one-cent precision', () => {
+    expect(() => calculateLaunch({ ...demoInputs, price: 0.001 })).toThrow()
+  })
+
+  it('rejects sub-cent price and revenue values instead of silently rounding them', () => {
+    expect(() => calculateLaunch({ ...demoInputs, price: 12.345 })).toThrow()
+    expect(() => calculateLaunch({ ...demoInputs, revenueGoal: 0.015 })).toThrow()
+  })
+
   it('returns identical output for identical input', () => {
     expect(calculateLaunch(demoInputs)).toEqual(calculateLaunch(demoInputs))
   })

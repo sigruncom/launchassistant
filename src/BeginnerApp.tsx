@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChoiceGroup } from './components/Fields'
 import { BeginnerResults } from './components/BeginnerResults'
+import { OfferEconomicsFields } from './components/OfferEconomicsFields'
 import { VariantNavigation } from './components/VariantNavigation'
 import { calculateLaunch } from './domain/calculator'
 import {
@@ -12,8 +13,9 @@ import {
   type BeginnerReadiness,
   type BeginnerResearch,
 } from './domain/beginner'
-import type { LaunchInputs } from './domain/schema'
+import { offerEconomicsErrors } from './domain/offerEconomics'
 import { composeStrategy } from './domain/strategy'
+import { useOfferEconomics } from './hooks/useOfferEconomics'
 
 const steps = [
   { number: '01', short: 'Goal', kicker: 'Your goal', title: 'What should this launch achieve?' },
@@ -27,12 +29,6 @@ const steps = [
 ] as const
 
 type StepIndex = 0 | 1 | 2
-
-const currencySymbol: Record<LaunchInputs['currency'], string> = {
-  EUR: '€',
-  USD: '$',
-  GBP: '£',
-}
 
 type BeginnerNumberFieldProps = {
   id: string
@@ -87,11 +83,29 @@ function BeginnerApp() {
   const [showErrors, setShowErrors] = useState(false)
   const [announcement, setAnnouncement] = useState('Beginner planner ready. Nothing is saved.')
   const errorSummaryRef = useRef<HTMLDivElement>(null)
+  const economics = useOfferEconomics({
+    price: beginnerBlank.price,
+    spotsToSell: beginnerBlank.spotsToSell,
+    revenueGoal: beginnerBlank.revenueGoal,
+  })
 
-  const goalValidation = useMemo(() => beginnerGoalSchema.safeParse(draft), [draft])
-  const validation = useMemo(() => beginnerAnswerSchema.safeParse(draft), [draft])
+  const resolvedDraft = useMemo(
+    () =>
+      economics.result.success
+        ? { ...draft, ...economics.result.values }
+        : null,
+    [draft, economics.result],
+  )
+  const goalValidation = useMemo(
+    () => (resolvedDraft ? beginnerGoalSchema.safeParse(resolvedDraft) : null),
+    [resolvedDraft],
+  )
+  const validation = useMemo(
+    () => (resolvedDraft ? beginnerAnswerSchema.safeParse(resolvedDraft) : null),
+    [resolvedDraft],
+  )
   const inputs = useMemo(
-    () => (validation.success ? toBeginnerLaunchInputs(validation.data) : null),
+    () => (validation?.success ? toBeginnerLaunchInputs(validation.data) : null),
     [validation],
   )
   const calculation = useMemo(() => (inputs ? calculateLaunch(inputs) : null), [inputs])
@@ -106,11 +120,12 @@ function BeginnerApp() {
 
   const moveTo = (step: StepIndex) => {
     if (step > activeStep) {
-      const canAdvance = step === 1 ? goalValidation.success : validation.success
+      const canAdvance = step === 1 ? goalValidation?.success : validation?.success
 
       if (!canAdvance) {
         setShowErrors(true)
         setAnnouncement('Complete the few highlighted questions before continuing.')
+        window.requestAnimationFrame(() => errorSummaryRef.current?.focus())
         return
       }
     }
@@ -123,16 +138,23 @@ function BeginnerApp() {
 
   const startOver = () => {
     setDraft(beginnerBlank)
+    economics.reset({ price: '', spotsToSell: '', revenueGoal: '' })
     setActiveStep(0)
     setShowErrors(false)
     setAnnouncement('The beginner form was cleared. Nothing was retained.')
   }
 
   const currentValidation = activeStep === 0 ? goalValidation : validation
-  const errors =
-    showErrors && !currentValidation.success
-      ? [...new Set(currentValidation.error.issues.map((issue) => issue.message))]
-      : []
+  const errors = showErrors
+    ? [
+        ...new Set([
+          ...offerEconomicsErrors(economics.result),
+          ...(currentValidation && !currentValidation.success
+            ? currentValidation.error.issues.map((issue) => issue.message)
+            : []),
+        ]),
+      ]
+    : []
 
   useEffect(() => {
     if (errors.length > 0) {
@@ -144,7 +166,7 @@ function BeginnerApp() {
     <div className="app-shell beginner-shell">
       <div className="prototype-banner" role="note">
         <span>Beginner prototype</span>
-        <p>Six clear questions · nothing you enter is saved</p>
+        <p>A guided planning path · nothing you enter is saved</p>
       </div>
 
       <header className="site-header">
@@ -222,30 +244,21 @@ function BeginnerApp() {
                   </select>
                 </div>
 
-                <div className="form-grid form-grid--2">
-                  <BeginnerNumberField
-                    id="beginner-price"
-                    label="What will one client pay?"
-                    prefix={currencySymbol[draft.currency]}
-                    placeholder="997"
-                    min={0.01}
-                    max={1_000_000}
-                    step={1}
-                    value={draft.price}
-                    onChange={(value) => update('price', value)}
-                  />
-                  <BeginnerNumberField
-                    id="beginner-revenue-goal"
-                    label="What should this launch make?"
-                    prefix={currencySymbol[draft.currency]}
-                    placeholder="12,000"
-                    min={0.01}
-                    max={100_000_000}
-                    step={100}
-                    value={draft.revenueGoal}
-                    onChange={(value) => update('revenueGoal', value)}
-                  />
-                </div>
+                <OfferEconomicsFields
+                  calculatedField={economics.calculatedField}
+                  currency={draft.currency}
+                  draft={economics.draft}
+                  idPrefix="beginner-economics"
+                  result={economics.result}
+                  showErrors={showErrors}
+                  variant="beginner"
+                  onCalculatedFieldChange={(field) => {
+                    economics.calculateField(field)
+                    setShowErrors(false)
+                    setAnnouncement(`The planner will now calculate ${field === 'spotsToSell' ? 'clients to enroll' : field === 'revenueGoal' ? 'planned sales revenue' : 'price per client'}.`)
+                  }}
+                  onChange={economics.update}
+                />
               </div>
             ) : null}
 

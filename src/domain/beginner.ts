@@ -3,6 +3,7 @@ import {
   currencyValues,
   type LaunchInputs,
 } from './schema'
+import { offerEconomicsLimits } from './offerEconomics'
 
 export const beginnerReadinessValues = ['new', 'building', 'ready'] as const
 export const beginnerResearchValues = ['yes', 'not-yet'] as const
@@ -13,24 +14,31 @@ export type BeginnerResearch = (typeof beginnerResearchValues)[number]
 export type BeginnerDraft = {
   currency: LaunchInputs['currency']
   price: string
+  spotsToSell: string
   revenueGoal: string
   organicRegistrations: string
   readiness: BeginnerReadiness | ''
   recentResearch: BeginnerResearch | ''
 }
 
-const requiredPositiveNumber = (label: string, maximum: number) =>
+const requiredMoney = (label: string, maximum: number) =>
   z
     .string()
     .trim()
     .refine((value) => value !== '', { message: `Enter ${label}.` })
     .refine(
-      (value) => value === '' || (Number.isFinite(Number(value)) && Number(value) > 0),
-      { message: `Enter a valid ${label}.` },
+      (value) => value === '' || /^\d+(?:\.\d{1,2})?$/.test(value),
+      { message: `Enter a valid ${label} with no more than two decimals.` },
+    )
+    .refine(
+      (value) => value === '' || !/^\d+(?:\.\d{1,2})?$/.test(value) || Number(value) >= 0.01,
+      { message: `Enter ${label} of at least 0.01.` },
     )
     .refine(
       (value) =>
-        value === '' || !Number.isFinite(Number(value)) || Number(value) <= maximum,
+        value === '' ||
+        !/^\d+(?:\.\d{1,2})?$/.test(value) ||
+        (Number.isFinite(Number(value)) && Number(value) <= maximum),
       { message: `${label[0].toUpperCase()}${label.slice(1)} is too large for this prototype.` },
     )
     .transform(Number)
@@ -55,8 +63,8 @@ const requiredWholeNumber = (label: string, maximum: number) =>
 
 export const beginnerGoalSchema = z.object({
   currency: z.enum(currencyValues),
-  price: requiredPositiveNumber('what one client will pay', 1_000_000),
-  revenueGoal: requiredPositiveNumber('your revenue goal', 100_000_000),
+  price: requiredMoney('what one client will pay', offerEconomicsLimits.price),
+  revenueGoal: requiredMoney('your revenue goal', offerEconomicsLimits.revenueGoal),
 })
 
 export const beginnerAnswerSchema = beginnerGoalSchema.extend({
@@ -79,6 +87,7 @@ export type BeginnerAnswers = z.output<typeof beginnerAnswerSchema>
 export const beginnerBlank: BeginnerDraft = {
   currency: 'EUR',
   price: '',
+  spotsToSell: '',
   revenueGoal: '',
   organicRegistrations: '',
   readiness: '',

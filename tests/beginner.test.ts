@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { calculateLaunch } from '../src/domain/calculator'
 import {
+  calculateOfferEconomics,
+  type OfferEconomicsField,
+} from '../src/domain/offerEconomics'
+import {
   beginnerAnswerSchema,
   beginnerBlank,
   toBeginnerLaunchInputs,
@@ -53,7 +57,34 @@ describe('beginner variant', () => {
     expect(
       beginnerAnswerSchema.safeParse(answerDraft({ organicRegistrations: '100000001' })).success,
     ).toBe(false)
+    expect(
+      beginnerAnswerSchema.safeParse(answerDraft({ price: '9'.repeat(400) })).success,
+    ).toBe(false)
   })
+
+  it.each(['spotsToSell', 'revenueGoal', 'price'] as OfferEconomicsField[])(
+    'maps a %s cross-calculation into a consistent beginner plan',
+    (calculatedField) => {
+      const economics = calculateOfferEconomics(
+        { price: '997', spotsToSell: '13', revenueGoal: '12000' },
+        calculatedField,
+      )
+      expect(economics.success).toBe(true)
+      if (!economics.success) throw new Error('Expected valid beginner economics.')
+
+      const answers = beginnerAnswerSchema.parse(
+        answerDraft({
+          price: economics.values.price,
+          revenueGoal: economics.values.revenueGoal,
+        }),
+      )
+      const inputs = toBeginnerLaunchInputs(answers)
+
+      expect(calculateLaunch(inputs).selected.buyersRequired).toBe(
+        economics.numbers.spotsToSell,
+      )
+    },
+  )
 
   it('maps beginner answers to disclosed organic-only planning defaults', () => {
     const inputs = toBeginnerLaunchInputs(parsedAnswers())

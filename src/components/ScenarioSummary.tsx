@@ -6,7 +6,8 @@ const formatter = (currency: LaunchInputs['currency']) =>
   new Intl.NumberFormat('en', {
     style: 'currency',
     currency,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
   })
 
 type ScenarioSummaryProps = {

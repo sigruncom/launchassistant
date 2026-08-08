@@ -1,4 +1,8 @@
 import { z } from 'zod'
+import {
+  hasSupportedCentPrecision,
+  offerEconomicsLimits,
+} from './offerEconomics'
 
 export const currencyValues = ['EUR', 'USD', 'GBP'] as const
 export const offerTypeValues = ['one-to-one', 'group', 'course', 'undecided'] as const
@@ -12,8 +16,18 @@ export const launchInputSchema = z
     offerName: z.string().trim().min(1).max(80),
     offerType: z.enum(offerTypeValues),
     currency: z.enum(currencyValues),
-    price: z.number().finite().positive().max(1_000_000),
-    revenueGoal: z.number().finite().positive().max(100_000_000),
+    price: z
+      .number()
+      .finite()
+      .min(0.01)
+      .max(offerEconomicsLimits.price)
+      .refine(hasSupportedCentPrecision, 'Price can have no more than two decimal places.'),
+    revenueGoal: z
+      .number()
+      .finite()
+      .min(0.01)
+      .max(offerEconomicsLimits.revenueGoal)
+      .refine(hasSupportedCentPrecision, 'Revenue goal can have no more than two decimal places.'),
     emailListSize: z.number().int().nonnegative().max(100_000_000),
     socialFollowers: z.number().int().nonnegative().max(100_000_000),
     organicRegistrations: z.number().int().nonnegative().max(100_000_000),

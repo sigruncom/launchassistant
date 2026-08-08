@@ -363,6 +363,89 @@ button:disabled {
   grid-template-columns: 0.75fr 1fr 1.2fr;
 }
 
+.economics-currency-field {
+  max-width: 220px;
+}
+
+.economics-builder {
+  display: grid;
+  gap: 24px;
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(242, 243, 244, 0.72), rgba(255, 255, 255, 0.92));
+}
+
+.economics-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.field .economics-label {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.economics-label em {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--sigrun-red);
+  color: var(--sigrun-white);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 680;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.economics-field .field-hint {
+  min-height: 35px;
+}
+
+.economics-field--calculated .number-control {
+  border-color: rgba(204, 0, 0, 0.28);
+  background: rgba(204, 0, 0, 0.035);
+}
+
+.economics-field--calculated input {
+  cursor: default;
+  font-weight: 620;
+}
+
+.field-error {
+  margin: 8px 0 0;
+  color: var(--sigrun-red);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.economics-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.economics-summary strong {
+  font-weight: 620;
+}
+
+.economics-summary span {
+  color: var(--muted);
+}
+
+.economics-footnote {
+  margin: -12px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .field,
 .choice-fieldset {
   min-width: 0;
@@ -1680,9 +1763,24 @@ button:disabled {
 
   .form-grid--2,
   .form-grid--3,
+  .economics-grid,
   .choice-grid--3,
   .choice-grid--4 {
     grid-template-columns: 1fr;
+  }
+
+  .economics-builder {
+    margin-inline: -8px;
+    padding: 22px 18px;
+  }
+
+  .economics-field .field-hint {
+    min-height: 0;
+  }
+
+  .economics-summary {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .choice-card {
