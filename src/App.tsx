@@ -43,7 +43,7 @@ function App() {
 
   const resolvedInputs = useMemo<LaunchInputs | null>(
     () =>
-      economics.result.success
+      economics.result?.success
         ? {
             ...inputs,
             price: economics.result.numbers.price,
@@ -215,12 +215,9 @@ function App() {
                   draft={economics.draft}
                   idPrefix="complete-economics"
                   result={economics.result}
-                  showErrors={!economics.result.success}
+                  showErrors={Boolean(economics.result && !economics.result.success)}
+                  sourceOrder={economics.sourceOrder}
                   variant="complete"
-                  onCalculatedFieldChange={(field) => {
-                    economics.calculateField(field)
-                    setAnnouncement(`The planner will now calculate ${field === 'spotsToSell' ? 'spots to sell' : field === 'revenueGoal' ? 'the revenue goal' : 'the price'}.`)
-                  }}
                   onChange={economics.update}
                 />
               </div>

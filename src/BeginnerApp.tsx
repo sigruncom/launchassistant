@@ -91,7 +91,7 @@ function BeginnerApp() {
 
   const resolvedDraft = useMemo(
     () =>
-      economics.result.success
+      economics.result?.success
         ? { ...draft, ...economics.result.values }
         : null,
     [draft, economics.result],
@@ -251,12 +251,8 @@ function BeginnerApp() {
                   idPrefix="beginner-economics"
                   result={economics.result}
                   showErrors={showErrors}
+                  sourceOrder={economics.sourceOrder}
                   variant="beginner"
-                  onCalculatedFieldChange={(field) => {
-                    economics.calculateField(field)
-                    setShowErrors(false)
-                    setAnnouncement(`The planner will now calculate ${field === 'spotsToSell' ? 'clients to enroll' : field === 'revenueGoal' ? 'planned sales revenue' : 'price per client'}.`)
-                  }}
                   onChange={economics.update}
                 />
               </div>

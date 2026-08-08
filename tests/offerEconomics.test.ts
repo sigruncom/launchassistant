@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { calculateLaunch } from '../src/domain/calculator'
 import {
   calculateOfferEconomics,
+  createOfferEconomicsEditor,
+  editOfferEconomics,
+  offerEconomicsDraftFromNumbers,
+  resolveOfferEconomicsEditor,
   type OfferEconomicsDraft,
+  type OfferEconomicsEditorState,
   type OfferEconomicsField,
 } from '../src/domain/offerEconomics'
 import { demoInputs } from '../src/domain/schema'
@@ -25,6 +30,15 @@ const expectSuccess = (result: ReturnType<typeof calculateOfferEconomics>) => {
   expect(result.success).toBe(true)
   if (!result.success) throw new Error('Expected a successful offer-economics result.')
   return result
+}
+
+const expectEditorSuccess = (editor: OfferEconomicsEditorState) => {
+  const resolved = resolveOfferEconomicsEditor(editor)
+  expect(resolved.result?.success).toBe(true)
+  if (!resolved.result?.success) {
+    throw new Error('Expected a successful offer-economics editor result.')
+  }
+  return { ...resolved, result: resolved.result }
 }
 
 describe('offer economics cross-calculator', () => {
@@ -147,5 +161,156 @@ describe('offer economics cross-calculator', () => {
     calculateOfferEconomics(draft, 'spotsToSell')
 
     expect(draft).toEqual(original)
+  })
+})
+
+describe('fluid offer economics editor', () => {
+  const blankDraft: OfferEconomicsDraft = {
+    price: '',
+    spotsToSell: '',
+    revenueGoal: '',
+  }
+
+  it('waits for any two fields, then calculates the remaining field', () => {
+    let editor = createOfferEconomicsEditor(blankDraft)
+    expect(resolveOfferEconomicsEditor(editor).calculatedField).toBeNull()
+
+    editor = editOfferEconomics(editor, 'price', '997')
+    expect(resolveOfferEconomicsEditor(editor).calculatedField).toBeNull()
+
+    editor = editOfferEconomics(editor, 'revenueGoal', '12000')
+    const resolved = expectEditorSuccess(editor)
+
+    expect(resolved.calculatedField).toBe('spotsToSell')
+    expect(resolved.values.spotsToSell).toBe('13')
+  })
+
+  it.each([
+    ['price', 'spotsToSell', 'revenueGoal', '12961'],
+    ['spotsToSell', 'price', 'revenueGoal', '12961'],
+    ['price', 'revenueGoal', 'spotsToSell', '13'],
+    ['revenueGoal', 'price', 'spotsToSell', '13'],
+    ['spotsToSell', 'revenueGoal', 'price', '923.08'],
+    ['revenueGoal', 'spotsToSell', 'price', '923.08'],
+  ] as const)(
+    'editing %s then %s calculates %s',
+    (first, second, calculatedField, expectedValue) => {
+      const sourceValues: OfferEconomicsDraft = {
+        price: '997',
+        spotsToSell: '13',
+        revenueGoal: '12000',
+      }
+      let editor = createOfferEconomicsEditor(blankDraft)
+      editor = editOfferEconomics(editor, first, sourceValues[first])
+      editor = editOfferEconomics(editor, second, sourceValues[second])
+      const resolved = expectEditorSuccess(editor)
+
+      expect(resolved.calculatedField).toBe(calculatedField)
+      expect(resolved.values[calculatedField]).toBe(expectedValue)
+    },
+  )
+
+  it('editing the auto-calculated value makes the oldest input the new result', () => {
+    const initial = createOfferEconomicsEditor(
+      offerEconomicsDraftFromNumbers(997, 12000),
+    )
+    expect(initial.sourceOrder).toEqual(['revenueGoal', 'price'])
+    expect(expectEditorSuccess(initial).calculatedField).toBe('spotsToSell')
+
+    const edited = editOfferEconomics(initial, 'spotsToSell', '14')
+    const resolved = expectEditorSuccess(edited)
+
+    expect(edited.sourceOrder).toEqual(['price', 'spotsToSell'])
+    expect(resolved.calculatedField).toBe('revenueGoal')
+    expect(resolved.values.revenueGoal).toBe('13958')
+  })
+
+  it('keeps the same result field while either existing input is edited', () => {
+    const initial = createOfferEconomicsEditor(
+      offerEconomicsDraftFromNumbers(997, 12000),
+    )
+    const olderEdited = editOfferEconomics(initial, 'revenueGoal', '12001')
+    const newerEdited = editOfferEconomics(initial, 'price', '1000')
+
+    expect(olderEdited.sourceOrder).toEqual(['price', 'revenueGoal'])
+    expect(expectEditorSuccess(olderEdited).calculatedField).toBe('spotsToSell')
+    expect(newerEdited.sourceOrder).toEqual(['revenueGoal', 'price'])
+    expect(expectEditorSuccess(newerEdited).calculatedField).toBe('spotsToSell')
+  })
+
+  it('keeps existing inputs while an edited calculated value is temporarily invalid', () => {
+    const initial = createOfferEconomicsEditor(
+      offerEconomicsDraftFromNumbers(997, 12000),
+    )
+    const cleared = editOfferEconomics(initial, 'spotsToSell', '')
+    const waiting = resolveOfferEconomicsEditor(cleared)
+
+    expect(cleared.sourceOrder).toEqual(['revenueGoal', 'price'])
+    expect(waiting.calculatedField).toBe('spotsToSell')
+    expect(waiting.result?.success).toBe(false)
+    expect(waiting.values).toEqual({
+      price: '997',
+      spotsToSell: '',
+      revenueGoal: '12000',
+    })
+    expect(waiting.result?.errors.spotsToSell).toBe(
+      'Enter the number of client spots.',
+    )
+
+    const recovered = expectEditorSuccess(
+      editOfferEconomics(cleared, 'spotsToSell', '14'),
+    )
+    expect(recovered.calculatedField).toBe('revenueGoal')
+    expect(recovered.values.revenueGoal).toBe('13958')
+  })
+
+  it('makes the next recalculated field explicit through the ordered inputs', () => {
+    const demoHistory = createOfferEconomicsEditor(
+      offerEconomicsDraftFromNumbers(997, 12000),
+    )
+    let enteredHistory = createOfferEconomicsEditor(blankDraft)
+    enteredHistory = editOfferEconomics(enteredHistory, 'price', '997')
+    enteredHistory = editOfferEconomics(enteredHistory, 'revenueGoal', '12000')
+
+    expect(demoHistory.sourceOrder).toEqual(['revenueGoal', 'price'])
+    expect(enteredHistory.sourceOrder).toEqual(['price', 'revenueGoal'])
+
+    const demoEdit = expectEditorSuccess(
+      editOfferEconomics(demoHistory, 'spotsToSell', '14'),
+    )
+    const enteredEdit = expectEditorSuccess(
+      editOfferEconomics(enteredHistory, 'spotsToSell', '14'),
+    )
+
+    expect(demoEdit.calculatedField).toBe('revenueGoal')
+    expect(demoEdit.values.revenueGoal).toBe('13958')
+    expect(enteredEdit.calculatedField).toBe('price')
+    expect(enteredEdit.values.price).toBe('857.15')
+  })
+
+  it('supports repeated role changes without reviving old calculated values', () => {
+    let editor = createOfferEconomicsEditor(
+      offerEconomicsDraftFromNumbers(997, 12000),
+    )
+    editor = editOfferEconomics(editor, 'spotsToSell', '14')
+    editor = editOfferEconomics(editor, 'revenueGoal', '14000')
+    let resolved = expectEditorSuccess(editor)
+    expect(resolved.calculatedField).toBe('price')
+    expect(resolved.values.price).toBe('1000')
+
+    editor = editOfferEconomics(editor, 'price', '900')
+    resolved = expectEditorSuccess(editor)
+    expect(resolved.calculatedField).toBe('spotsToSell')
+    expect(resolved.values.spotsToSell).toBe('16')
+  })
+
+  it('is deterministic and does not mutate editor state', () => {
+    const initial = createOfferEconomicsEditor(blankDraft)
+    const original = structuredClone(initial)
+    const first = editOfferEconomics(initial, 'price', '997')
+    const second = editOfferEconomics(initial, 'price', '997')
+
+    expect(initial).toEqual(original)
+    expect(first).toEqual(second)
   })
 })

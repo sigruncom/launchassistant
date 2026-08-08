@@ -1,45 +1,31 @@
 import { useMemo, useState } from 'react'
 import {
-  calculateOfferEconomics,
+  createOfferEconomicsEditor,
+  editOfferEconomics,
+  resolveOfferEconomicsEditor,
   type OfferEconomicsDraft,
   type OfferEconomicsField,
 } from '../domain/offerEconomics'
 
 export const useOfferEconomics = (initialDraft: OfferEconomicsDraft) => {
-  const [draft, setDraft] = useState<OfferEconomicsDraft>(() => ({ ...initialDraft }))
-  const [calculatedField, setCalculatedField] =
-    useState<OfferEconomicsField>('spotsToSell')
+  const [editor, setEditor] = useState(() => createOfferEconomicsEditor(initialDraft))
 
-  const result = useMemo(
-    () => calculateOfferEconomics(draft, calculatedField),
-    [draft, calculatedField],
-  )
+  const resolved = useMemo(() => resolveOfferEconomicsEditor(editor), [editor])
 
   const update = (field: OfferEconomicsField, value: string) => {
-    if (field === calculatedField) return
-    setDraft((current) => ({ ...current, [field]: value }))
+    setEditor((current) => editOfferEconomics(current, field, value))
   }
 
-  const calculateField = (field: OfferEconomicsField) => {
-    if (field === calculatedField) return
-    setDraft({ ...result.values })
-    setCalculatedField(field)
-  }
-
-  const reset = (
-    nextDraft: OfferEconomicsDraft,
-    nextCalculatedField: OfferEconomicsField = 'spotsToSell',
-  ) => {
-    setDraft({ ...nextDraft })
-    setCalculatedField(nextCalculatedField)
+  const reset = (nextDraft: OfferEconomicsDraft) => {
+    setEditor(createOfferEconomicsEditor(nextDraft))
   }
 
   return {
-    calculatedField,
-    calculateField,
-    draft: result.values,
+    calculatedField: resolved.calculatedField,
+    draft: resolved.values,
     reset,
-    result,
+    result: resolved.result,
+    sourceOrder: editor.sourceOrder,
     update,
   }
 }

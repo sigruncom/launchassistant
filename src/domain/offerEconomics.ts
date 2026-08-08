@@ -10,6 +10,18 @@ export type OfferEconomicsDraft = Record<OfferEconomicsField, string>
 
 export type OfferEconomicsErrors = Partial<Record<OfferEconomicsField, string>>
 
+export type OfferEconomicsEditorState = {
+  draft: OfferEconomicsDraft
+  pendingCalculatedField?: OfferEconomicsField
+  sourceOrder: OfferEconomicsField[]
+}
+
+export type ResolvedOfferEconomicsEditor = {
+  calculatedField: OfferEconomicsField | null
+  result: OfferEconomicsResult | null
+  values: OfferEconomicsDraft
+}
+
 export const offerEconomicsLimits = {
   price: 1_000_000,
   spotsToSell: 100_000_000,
@@ -120,6 +132,13 @@ const parseSpots = (rawValue: string): { value?: bigint; error?: string } => {
 
   return { value: spots }
 }
+
+const offerEconomicsFieldError = (
+  field: OfferEconomicsField,
+  value: string,
+) => field === 'spotsToSell'
+  ? parseSpots(value).error
+  : parseMoney(value, field).error
 
 const invalidResult = (
   draft: OfferEconomicsDraft,
@@ -261,6 +280,99 @@ export const calculateOfferEconomics = (
   })
 }
 
+const initialSourcePriority: OfferEconomicsField[] = [
+  'revenueGoal',
+  'price',
+  'spotsToSell',
+]
+
+export const createOfferEconomicsEditor = (
+  draft: OfferEconomicsDraft,
+): OfferEconomicsEditorState => ({
+  draft: { ...draft },
+  sourceOrder: initialSourcePriority
+    .filter((field) => draft[field].trim() !== '')
+    .slice(-2),
+})
+
+export const resolveOfferEconomicsEditor = (
+  editor: OfferEconomicsEditorState,
+): ResolvedOfferEconomicsEditor => {
+  if (editor.sourceOrder.length < 2) {
+    return {
+      calculatedField: null,
+      result: null,
+      values: { ...editor.draft },
+    }
+  }
+
+  const calculatedField = offerEconomicsFieldValues.find(
+    (field) => !editor.sourceOrder.includes(field),
+  )
+
+  if (!calculatedField) {
+    throw new Error('Offer economics requires two distinct source fields.')
+  }
+
+  if (editor.pendingCalculatedField === calculatedField) {
+    const error = offerEconomicsFieldError(calculatedField, editor.draft[calculatedField])
+    if (error) {
+      return {
+        calculatedField,
+        result: {
+          success: false,
+          calculatedField,
+          values: { ...editor.draft },
+          errors: { [calculatedField]: error },
+        },
+        values: { ...editor.draft },
+      }
+    }
+  }
+
+  const result = calculateOfferEconomics(editor.draft, calculatedField)
+  return {
+    calculatedField,
+    result,
+    values: result.values,
+  }
+}
+
+export const editOfferEconomics = (
+  editor: OfferEconomicsEditorState,
+  field: OfferEconomicsField,
+  value: string,
+): OfferEconomicsEditorState => {
+  const current = resolveOfferEconomicsEditor(editor)
+  const editingCalculatedField = current.calculatedField === field
+    && !editor.sourceOrder.includes(field)
+
+  if (editingCalculatedField && offerEconomicsFieldError(field, value)) {
+    return {
+      draft: {
+        ...current.values,
+        [field]: value,
+      },
+      pendingCalculatedField: field,
+      sourceOrder: [...editor.sourceOrder],
+    }
+  }
+
+  const sourceOrder = [
+    ...editor.sourceOrder.filter((sourceField) => sourceField !== field),
+    field,
+  ].slice(-2)
+
+  return {
+    draft: {
+      ...current.values,
+      [field]: value,
+    },
+    pendingCalculatedField: undefined,
+    sourceOrder,
+  }
+}
+
 export const offerEconomicsDraftFromNumbers = (
   price: number,
   revenueGoal: number,
@@ -270,5 +382,9 @@ export const offerEconomicsDraftFromNumbers = (
   revenueGoal: formatCentsForInput(BigInt(Math.round(revenueGoal * 100))),
 })
 
-export const offerEconomicsErrors = (result: OfferEconomicsResult) =>
-  result.success ? [] : [...new Set(Object.values(result.errors))]
+export const offerEconomicsErrors = (result: OfferEconomicsResult | null) =>
+  result
+    ? result.success
+      ? []
+      : [...new Set(Object.values(result.errors))]
+    : ['Enter values in any two fields so the third can be calculated.']

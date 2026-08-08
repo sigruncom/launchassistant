@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { LaunchInputs } from '../domain/schema'
 import {
   offerEconomicsLimits,
@@ -5,7 +6,6 @@ import {
   type OfferEconomicsField,
   type OfferEconomicsResult,
 } from '../domain/offerEconomics'
-import { ChoiceGroup } from './Fields'
 
 const currencySymbol: Record<LaunchInputs['currency'], string> = {
   EUR: '€',
@@ -47,6 +47,7 @@ const fieldDetails: Record<
 
 type EconomicsNumberFieldProps = {
   calculated: boolean
+  calculationReady: boolean
   error?: string
   field: OfferEconomicsField
   id: string
@@ -54,11 +55,14 @@ type EconomicsNumberFieldProps = {
   prefix?: string
   showError: boolean
   value: string
+  recalculatedLabel?: string
+  onBlur: () => void
   onChange: (value: string) => void
 }
 
 function EconomicsNumberField({
   calculated,
+  calculationReady,
   error,
   field,
   id,
@@ -66,6 +70,8 @@ function EconomicsNumberField({
   prefix,
   showError,
   value,
+  recalculatedLabel,
+  onBlur,
   onChange,
 }: EconomicsNumberFieldProps) {
   const hintId = `${id}-hint`
@@ -76,10 +82,16 @@ function EconomicsNumberField({
     <div className={`field economics-field ${calculated ? 'economics-field--calculated' : ''}`}>
       <label className="economics-label" htmlFor={id}>
         <span>{label}</span>
-        {calculated ? <em>Calculated</em> : null}
+        {calculated ? <em>{calculationReady ? 'Auto-calculated' : 'Waiting'}</em> : null}
       </label>
       <p className="field-hint" id={hintId}>
-        {calculated ? 'Calculated from the other two values.' : field === 'spotsToSell'
+        {calculated
+          ? calculationReady
+            ? `Updates from the other two values. Edit this to recalculate ${recalculatedLabel}.`
+            : error
+              ? 'Enter a valid value here to make it one of your inputs.'
+              : 'Waiting for valid values in the other two fields.'
+          : field === 'spotsToSell'
           ? 'Number of clients; a sales target, not a delivery limit.'
           : field === 'price'
             ? 'The full offer price for one sale.'
@@ -94,11 +106,11 @@ function EconomicsNumberField({
           min={isMoney ? 0.01 : 1}
           max={offerEconomicsLimits[field]}
           step={isMoney ? 0.01 : 1}
-          placeholder={calculated ? 'Calculated' : fieldDetails[field].placeholder}
+          placeholder={calculated ? 'Waiting for two valid values' : fieldDetails[field].placeholder}
           value={value}
-          readOnly={calculated}
           aria-invalid={showError && Boolean(error) ? true : undefined}
           aria-describedby={`${hintId}${showError && error ? ` ${errorId}` : ''}`}
+          onBlur={onBlur}
           onChange={(event) => onChange(event.target.value)}
         />
       </div>
@@ -112,14 +124,14 @@ function EconomicsNumberField({
 }
 
 type OfferEconomicsFieldsProps = {
-  calculatedField: OfferEconomicsField
+  calculatedField: OfferEconomicsField | null
   currency: LaunchInputs['currency']
   draft: OfferEconomicsDraft
   idPrefix: string
-  result: OfferEconomicsResult
+  result: OfferEconomicsResult | null
   showErrors?: boolean
+  sourceOrder: OfferEconomicsField[]
   variant: 'beginner' | 'complete'
-  onCalculatedFieldChange: (field: OfferEconomicsField) => void
   onChange: (field: OfferEconomicsField, value: string) => void
 }
 
@@ -130,39 +142,49 @@ export function OfferEconomicsFields({
   idPrefix,
   result,
   showErrors = false,
+  sourceOrder,
   variant,
-  onCalculatedFieldChange,
   onChange,
 }: OfferEconomicsFieldsProps) {
   const money = moneyFormatter(currency)
   const symbol = currencySymbol[currency]
-  const exact = result.success ? result.exact : null
+  const exact = result?.success ? result.exact : null
+  const [valueAnnouncement, setValueAnnouncement] = useState('')
+  const calculatedLabel = calculatedField
+    ? fieldDetails[calculatedField][variant]
+    : null
+  const recalculatedLabel = sourceOrder.length === 2
+    ? fieldDetails[sourceOrder[0]][variant]
+    : undefined
+
+  const announceCalculatedValue = () => {
+    if (!calculatedField || !result?.success) return
+
+    const value = calculatedField === 'spotsToSell'
+      ? result.values.spotsToSell
+      : money.format(result.numbers[calculatedField])
+    setValueAnnouncement(`${fieldDetails[calculatedField][variant]} updated to ${value}.`)
+  }
 
   return (
-    <section className="economics-builder" aria-label="Offer goal calculator">
-      <ChoiceGroup<OfferEconomicsField>
-        legend="Which value should we calculate?"
-        name={`${idPrefix}-calculated-field`}
-        value={calculatedField}
-        onChange={onCalculatedFieldChange}
-        columns={3}
-        hint="Choose one value to calculate, then enter the other two."
-        choices={[
-          {
-            value: 'spotsToSell',
-            label: variant === 'beginner' ? 'Clients needed' : 'Spots to sell',
-            detail: 'Price + revenue goal',
-          },
-          { value: 'revenueGoal', label: 'Revenue goal', detail: 'Price × clients' },
-          { value: 'price', label: 'Price', detail: 'Goal ÷ clients, rounded up' },
-        ]}
-      />
+    <fieldset
+      className="economics-builder"
+      aria-describedby={`${idPrefix}-instructions`}
+    >
+      <legend>Offer calculation</legend>
+      <div className="economics-intro" id={`${idPrefix}-instructions`}>
+        <strong>Edit any two values.</strong>
+        <span>
+          We’ll update the third automatically. Edit the result to make it one of your inputs.
+        </span>
+      </div>
 
       <div className="form-grid economics-grid">
         {(['price', 'spotsToSell', 'revenueGoal'] as const).map((field) => (
           <EconomicsNumberField
             calculated={calculatedField === field}
-            error={result.errors[field]}
+            calculationReady={Boolean(result?.success)}
+            error={result?.errors[field]}
             field={field}
             id={`${idPrefix}-${field}`}
             key={field}
@@ -170,6 +192,8 @@ export function OfferEconomicsFields({
             prefix={fieldDetails[field].prefix ? symbol : undefined}
             showError={showErrors}
             value={draft[field]}
+            recalculatedLabel={recalculatedLabel}
+            onBlur={announceCalculatedValue}
             onChange={(value) => onChange(field, value)}
           />
         ))}
@@ -195,6 +219,16 @@ export function OfferEconomicsFields({
       <p className="economics-footnote">
         Currency changes the label only; this prototype does not convert exchange rates.
       </p>
-    </section>
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        {calculatedLabel
+          ? result?.success
+            ? `${calculatedLabel} is now calculated automatically from the other two values.`
+            : `${calculatedLabel} is waiting for valid values.`
+          : 'Enter any two values and the third will be calculated automatically.'}
+      </p>
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        {valueAnnouncement}
+      </p>
+    </fieldset>
   )
 }
