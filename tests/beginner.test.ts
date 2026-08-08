@@ -6,26 +6,39 @@ import {
   toBeginnerLaunchInputs,
 } from '../src/domain/beginner'
 import { composeStrategy } from '../src/domain/strategy'
-import { resolveAppVariant } from '../src/variants/appVariant'
+import {
+  appVariantHref,
+  resolveAppVariant,
+} from '../src/variants/appVariant'
 
 const answerDraft = (overrides: Record<string, unknown> = {}) => ({
-    currency: 'EUR',
-    price: '997',
-    revenueGoal: '12000',
-    organicRegistrations: '180',
-    readiness: 'building',
-    recentResearch: 'not-yet',
-    ...overrides,
-  })
+  currency: 'EUR',
+  price: '997',
+  revenueGoal: '12000',
+  organicRegistrations: '180',
+  readiness: 'building',
+  recentResearch: 'not-yet',
+  ...overrides,
+})
 
 const parsedAnswers = (overrides: Record<string, unknown> = {}) =>
   beginnerAnswerSchema.parse(answerDraft(overrides))
 
 describe('beginner variant', () => {
-  it('defaults every missing or invalid variant name to the complete app', () => {
+  it('uses the URL choice before the configured default', () => {
+    expect(resolveAppVariant('beginner', 'complete')).toBe('beginner')
+    expect(resolveAppVariant('complete', 'beginner')).toBe('complete')
+  })
+
+  it('falls back safely when the URL choice is missing or invalid', () => {
+    expect(resolveAppVariant(undefined, 'beginner')).toBe('beginner')
     expect(resolveAppVariant(undefined)).toBe('complete')
     expect(resolveAppVariant('unexpected')).toBe('complete')
-    expect(resolveAppVariant('beginner')).toBe('beginner')
+  })
+
+  it('creates shareable links containing only the selected planner version', () => {
+    expect(appVariantHref('beginner')).toBe('?planner=beginner')
+    expect(appVariantHref('complete')).toBe('?planner=complete')
   })
 
   it('does not accept an unanswered beginner form', () => {

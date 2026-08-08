@@ -114,10 +114,11 @@ button:disabled {
 }
 
 .site-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(190px, 1fr) auto minmax(190px, 1fr);
+  gap: 28px;
   min-height: 86px;
   align-items: center;
-  justify-content: space-between;
   border-bottom: 1px solid var(--line);
 }
 
@@ -145,6 +146,71 @@ button:disabled {
   font-weight: 580;
   text-decoration: underline;
   text-underline-offset: 4px;
+}
+
+.site-header > .demo-button {
+  justify-self: end;
+}
+
+.variant-navigation {
+  display: flex;
+  align-items: center;
+  justify-self: center;
+  gap: 12px;
+}
+
+.variant-navigation__label {
+  color: var(--sigrun-black);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  line-height: 1.15;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.variant-navigation__label small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 450;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.variant-navigation__links {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-button);
+  background: var(--sigrun-light-grey);
+}
+
+.variant-navigation__links a {
+  min-width: 88px;
+  padding: 8px 13px;
+  border-radius: var(--radius-button);
+  color: var(--sigrun-black);
+  font-size: 12px;
+  font-weight: 580;
+  text-align: center;
+  text-decoration: none;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.variant-navigation__links a:hover {
+  background: var(--sigrun-white);
+}
+
+.variant-navigation__links a[aria-current='page'] {
+  background: var(--sigrun-red);
+  color: var(--sigrun-white);
+}
+
+.variant-navigation__links a[aria-current='page']:hover {
+  background: var(--sigrun-black);
 }
 
 .hero {
@@ -1510,7 +1576,32 @@ button:disabled {
   }
 
   .site-header {
-    min-height: 70px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px 12px;
+    min-height: auto;
+    padding: 18px 0;
+  }
+
+  .variant-navigation {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .variant-navigation__links {
+    flex: 1;
+    max-width: 246px;
+  }
+
+  .variant-navigation__links a {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .site-header > .demo-button {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .wordmark {

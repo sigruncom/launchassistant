@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChoiceGroup } from './components/Fields'
 import { BeginnerResults } from './components/BeginnerResults'
+import { VariantNavigation } from './components/VariantNavigation'
 import { calculateLaunch } from './domain/calculator'
 import {
   beginnerAnswerSchema,
@@ -87,9 +88,6 @@ function BeginnerApp() {
   const [announcement, setAnnouncement] = useState('Beginner planner ready. Nothing is saved.')
   const errorSummaryRef = useRef<HTMLDivElement>(null)
 
-  const completeUrl =
-    import.meta.env.VITE_COMPLETE_URL ??
-    'https://sigrun-launch-assistant-prototype.vercel.app/'
   const goalValidation = useMemo(() => beginnerGoalSchema.safeParse(draft), [draft])
   const validation = useMemo(() => beginnerAnswerSchema.safeParse(draft), [draft])
   const inputs = useMemo(
@@ -153,9 +151,7 @@ function BeginnerApp() {
         <a className="wordmark" href="#top" aria-label="Sigrun beginner Launch Assistant home">
           SIGRUN<span>/</span>LAUNCH ASSISTANT
         </a>
-        <a className="demo-button" href={completeUrl} target="_blank" rel="noreferrer">
-          Complete planner ↗
-        </a>
+        <VariantNavigation activeVariant="beginner" />
       </header>
 
       <div className="hero beginner-hero" id="top">
@@ -337,7 +333,6 @@ function BeginnerApp() {
             inputs={inputs}
             calculation={calculation}
             strategy={strategy}
-            completeUrl={completeUrl}
             onEdit={() => moveTo(0)}
             onReset={startOver}
           />

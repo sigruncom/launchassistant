@@ -4,7 +4,7 @@ Private product repository for Sigrun's launch calculator and methodology-ground
 
 ## Current phase
 
-The repository contains two disposable internal prototypes for validating the Launch & Sell methodology before production architecture is introduced:
+The repository contains one disposable internal demo with two selectable planner experiences for validating the Launch & Sell methodology before production architecture is introduced:
 
 - **Beginner:** two short input steps with advanced assumptions fixed and disclosed.
 - **Complete:** the full calculator and methodology-review surface.
@@ -26,19 +26,15 @@ npm install
 npm run dev
 ```
 
-Run the beginner version locally with:
+Open the local URL printed by Vite. The bare URL opens the Complete planner. Use the top navigation—or open `?planner=beginner` or `?planner=complete` directly—to switch experiences. Switching versions reloads the page and clears the in-memory form.
 
-```bash
-npm run dev:beginner
-```
-
-Open the local URL printed by Vite. To verify the complete prototype:
+To verify the complete demo:
 
 ```bash
 npm run check
 ```
 
-The two hosted builds use the same source and shared calculation engine. `VITE_APP_VARIANT=beginner` selects the beginner interface; every other value safely defaults to the complete interface.
+Both experiences are shipped in one build and use the same shared calculation engine. `VITE_APP_VARIANT` remains available as an optional queryless default; an explicit `planner` query value takes priority.
 
 ## Documentation
 

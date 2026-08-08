@@ -5,14 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:beginner": "vite --mode beginner",
     "build": "tsc --noEmit && vite build",
-    "build:beginner": "tsc --noEmit && vite build --mode beginner",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run test && vite build --mode beginner && vite build"
+    "check": "npm run typecheck && npm run test && vite build"
   },
   "dependencies": {
     "react": "^19.2.8",

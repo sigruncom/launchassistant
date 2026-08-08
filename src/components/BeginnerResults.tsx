@@ -2,13 +2,13 @@ import { useState } from 'react'
 import type { LaunchCalculation } from '../domain/calculator'
 import type { LaunchInputs } from '../domain/schema'
 import type { Recommendation, StrategyPlan } from '../domain/strategy'
+import { appVariantHref } from '../variants/appVariant'
 import { SourceChip } from './SourceChip'
 
 type BeginnerResultsProps = {
   inputs: LaunchInputs
   calculation: LaunchCalculation
   strategy: StrategyPlan
-  completeUrl: string
   onEdit: () => void
   onReset: () => void
 }
@@ -64,7 +64,6 @@ export function BeginnerResults({
   inputs,
   calculation,
   strategy,
-  completeUrl,
   onEdit,
   onReset,
 }: BeginnerResultsProps) {
@@ -201,8 +200,8 @@ export function BeginnerResults({
         <button className="button button--secondary" type="button" onClick={copyPlan}>
           {copied ? 'Copied' : 'Copy plan'} <span aria-hidden="true">↗</span>
         </button>
-        <a className="text-link" href={completeUrl} target="_blank" rel="noreferrer">
-          Open complete planner ↗
+        <a className="text-link" href={appVariantHref('complete')}>
+          Open complete planner →
         </a>
         <button className="text-button" type="button" onClick={onReset}>
           Start over

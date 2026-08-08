@@ -10,6 +10,7 @@ import { composeStrategy } from './domain/strategy'
 import { ChoiceGroup, NumberField, ToggleField } from './components/Fields'
 import { ScenarioSummary } from './components/ScenarioSummary'
 import { StrategyView } from './components/StrategyView'
+import { VariantNavigation } from './components/VariantNavigation'
 
 const steps = [
   { number: '01', short: 'Offer', kicker: 'The offer', title: 'What are you launching?' },
@@ -83,6 +84,7 @@ function App() {
         <a className="wordmark" href="#top" aria-label="Sigrun Launch Assistant home">
           SIGRUN<span>/</span>LAUNCH ASSISTANT
         </a>
+        <VariantNavigation activeVariant="complete" />
         <button className="demo-button" type="button" onClick={loadDemo}>
           Restore demo
         </button>
