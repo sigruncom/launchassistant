@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { BeginnerResults } from './components/BeginnerResults'
+import { EmailReachFields } from './components/EmailReachFields'
 import {
   ChoiceGroup,
   DraftNumberField,
@@ -17,6 +18,7 @@ import {
   beginnerReachSchema,
   beginnerSalesSchema,
   beginnerWorkshopSchema,
+  createEmailReachTrace,
   toBeginnerLaunchInputs,
   type BeginnerDraft,
   type BeginnerResearch,
@@ -28,7 +30,11 @@ import { useOfferEconomics } from './hooks/useOfferEconomics'
 
 const steps = [
   { short: 'Revenue target', kicker: 'Your goal', title: 'What should this launch achieve?' },
-  { short: 'Reach', kicker: 'Your starting point', title: 'How many people can you invite?' },
+  {
+    short: 'Reach',
+    kicker: 'Your starting point',
+    title: 'How many registrations could your email list generate?',
+  },
   { short: 'Workshop', kicker: 'Your format', title: 'Which workshop fits this audience?' },
   { short: 'Attendance', kicker: 'Live attendance', title: 'What show-up rate will you plan for?' },
   { short: 'Sales case', kicker: 'The funnel', title: 'Which sales case should we use?' },
@@ -72,6 +78,16 @@ function BeginnerApp() {
     [finalValidation],
   )
   const calculation = useMemo(() => (inputs ? calculateLaunch(inputs) : null), [inputs])
+  const emailReachTrace = useMemo(
+    () =>
+      finalValidation?.success
+        ? createEmailReachTrace(
+            finalValidation.data.emailListSize,
+            finalValidation.data.organicSignupRatePercent,
+          )
+        : null,
+    [finalValidation],
+  )
   const strategy = useMemo(
     () => (inputs && calculation ? composeStrategy(inputs, calculation) : null),
     [inputs, calculation],
@@ -160,12 +176,12 @@ function BeginnerApp() {
           at a time<span className="red-dot">.</span>
         </h1>
         <p className="hero-copy">
-          Every answer starts blank. Each screen asks only what is needed for the next part of the
-          calculation.
+          Each screen asks only what is needed for the next part of the calculation. The only
+          starting value is a visible, editable 10% email-registration rate from Sigrun.
         </p>
         <ul className="beginner-trust" aria-label="Beginner planner details">
           <li>Six short input steps</li>
-          <li>No prefilled answers</li>
+          <li>No hidden assumptions</li>
           <li>No model call</li>
         </ul>
       </div>
@@ -225,14 +241,14 @@ function BeginnerApp() {
             ) : null}
 
             {activeStep === 1 ? (
-              <DraftNumberField
-                id="beginner-organic-registrations"
-                label="Expected workshop registrations without ads"
-                hint="Use a conservative estimate. This is not your total audience size."
-                placeholder="Enter your estimate"
-                max={100_000_000}
-                value={draft.organicRegistrations}
-                onChange={(value) => update('organicRegistrations', value)}
+              <EmailReachFields
+                emailListSize={draft.emailListSize}
+                signupRatePercent={draft.organicSignupRatePercent}
+                showErrors={showErrors}
+                onEmailListSizeChange={(value) => update('emailListSize', value)}
+                onSignupRatePercentChange={(value) =>
+                  update('organicSignupRatePercent', value)
+                }
               />
             ) : null}
 
@@ -381,12 +397,13 @@ function BeginnerApp() {
         </main>
       ) : null}
 
-      {activeStep === 6 && inputs && calculation && strategy ? (
+      {activeStep === 6 && inputs && calculation && strategy && emailReachTrace ? (
         <main className="beginner-results-main" tabIndex={-1} ref={resultMainRef}>
           <BeginnerResults
             inputs={inputs}
             calculation={calculation}
             strategy={strategy}
+            emailReachTrace={emailReachTrace}
             onEdit={() => moveTo(0)}
             onReset={startOver}
           />
@@ -397,7 +414,7 @@ function BeginnerApp() {
 
       <footer className="site-footer">
         <div className="wordmark wordmark--footer">SIGRUN</div>
-        <p>Guided methodology prototype · every planning input starts blank · nothing is saved</p>
+        <p>Guided methodology prototype · one visible planning default · nothing is saved</p>
         <span>Calculator {calculation?.calculatorVersion ?? 'not started'}</span>
       </footer>
     </div>

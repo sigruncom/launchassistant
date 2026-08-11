@@ -11,6 +11,22 @@ import { offerEconomicsLimits } from './offerEconomics'
 
 export const beginnerResearchValues = ['yes', 'not-yet'] as const
 export const beginnerYesNoValues = ['yes', 'no'] as const
+export const EMAIL_LIST_SIZE_MAX = 100_000_000
+export const ORGANIC_SIGNUP_RATE_DEFAULT = 10
+export const ORGANIC_SIGNUP_RATE_MAX = 50
+export const EMAIL_REACH_SOURCE_ID = 'SIGRUN-REACH-2026-08-11' as const
+
+export type EmailReachTrace = {
+  id: 'EMAIL-REACH-ESTIMATE'
+  label: 'Estimated registrations from your email list'
+  expression: string
+  result: number
+  source: 'derived'
+  emailListSize: number
+  signupRatePercent: number
+  rounding: 'nearest whole registration'
+  sourceId: typeof EMAIL_REACH_SOURCE_ID
+}
 
 export type BeginnerResearch = (typeof beginnerResearchValues)[number]
 export type BeginnerYesNo = (typeof beginnerYesNoValues)[number]
@@ -20,7 +36,8 @@ export type BeginnerDraft = {
   price: string
   spotsToSell: string
   revenueGoal: string
-  organicRegistrations: string
+  emailListSize: string
+  organicSignupRatePercent: string
   audienceContext: LaunchInputs['audienceContext'] | ''
   workshopDurationDays: LaunchInputs['workshopDurationDays'] | ''
   showUpRatePercent: string
@@ -72,7 +89,7 @@ const requiredWholeNumber = (label: string, maximum: number) =>
     )
     .transform(Number)
 
-const requiredPercent = (label: string, maximum: number) =>
+const requiredPercent = (label: string, maximum: number, minimum = 1) =>
   z
     .string()
     .trim()
@@ -80,10 +97,46 @@ const requiredPercent = (label: string, maximum: number) =>
     .refine(
       (value) =>
         value === '' ||
-        (Number.isFinite(Number(value)) && Number(value) >= 1 && Number(value) <= maximum),
-      { message: `Enter ${label} between 1% and ${maximum}%.` },
+        (Number.isFinite(Number(value)) && Number(value) >= minimum && Number(value) <= maximum),
+      { message: `Enter ${label} between ${minimum}% and ${maximum}%.` },
     )
     .transform(Number)
+
+export const createEmailReachTrace = (
+  emailListSize: number,
+  signupRatePercent: number,
+): EmailReachTrace => {
+  if (
+    !Number.isFinite(emailListSize) ||
+    !Number.isInteger(emailListSize) ||
+    emailListSize < 0 ||
+    emailListSize > EMAIL_LIST_SIZE_MAX ||
+    !Number.isFinite(signupRatePercent) ||
+    signupRatePercent < 0 ||
+    signupRatePercent > ORGANIC_SIGNUP_RATE_MAX
+  ) {
+    throw new Error('Email reach requires a valid list size and a signup rate from 0% to 50%.')
+  }
+
+  const result = Math.round(emailListSize * (signupRatePercent / 100))
+
+  return {
+    id: 'EMAIL-REACH-ESTIMATE',
+    label: 'Estimated registrations from your email list',
+    expression: `round(${emailListSize} × ${signupRatePercent}%)`,
+    result,
+    source: 'derived',
+    emailListSize,
+    signupRatePercent,
+    rounding: 'nearest whole registration',
+    sourceId: EMAIL_REACH_SOURCE_ID,
+  }
+}
+
+export const estimateOrganicRegistrationsFromEmailList = (
+  emailListSize: number,
+  signupRatePercent: number,
+) => createEmailReachTrace(emailListSize, signupRatePercent).result
 
 export const beginnerGoalSchema = z.object({
   currency: z.enum(currencyValues, { error: 'Choose a currency.' }),
@@ -92,9 +145,14 @@ export const beginnerGoalSchema = z.object({
 })
 
 export const beginnerReachSchema = beginnerGoalSchema.extend({
-  organicRegistrations: requiredWholeNumber(
-    'your expected registrations without ads',
-    100_000_000,
+  emailListSize: requiredWholeNumber(
+    'the number of people on your email list',
+    EMAIL_LIST_SIZE_MAX,
+  ),
+  organicSignupRatePercent: requiredPercent(
+    'an expected email registration rate',
+    ORGANIC_SIGNUP_RATE_MAX,
+    0,
   ),
 })
 
@@ -151,7 +209,8 @@ export const beginnerBlank: BeginnerDraft = {
   price: '',
   spotsToSell: '',
   revenueGoal: '',
-  organicRegistrations: '',
+  emailListSize: '',
+  organicSignupRatePercent: String(ORGANIC_SIGNUP_RATE_DEFAULT),
   audienceContext: '',
   workshopDurationDays: '',
   showUpRatePercent: '',
@@ -171,7 +230,10 @@ export const toBeginnerLaunchInputs = (answers: BeginnerAnswers): LaunchInputs =
     currency: answers.currency,
     price: answers.price,
     revenueGoal: answers.revenueGoal,
-    organicRegistrations: answers.organicRegistrations,
+    organicRegistrations: estimateOrganicRegistrationsFromEmailList(
+      answers.emailListSize,
+      answers.organicSignupRatePercent,
+    ),
     costPerLead: 0,
     adBudget: 0,
     audienceContext: answers.audienceContext,

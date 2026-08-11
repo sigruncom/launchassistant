@@ -29,3 +29,25 @@
 ### Remaining clarification
 
 - Confirm whether the 1–3% sales conversion is measured from all workshop registrations or only live attendees. The calculator keeps the existing registration-to-sale treatment until Sigrun answers.
+
+## 2026-08-11 — Sigrun email-reach correction
+
+**Source:** Slack reply from Sigrun in the Launch Assistant update thread at timestamp `1786442416.278279`.
+
+### Method guidance supplied
+
+- Beginner Screen 2 asks for the number of people on the participant’s email list.
+- It asks what percentage is expected to register organically.
+- The visible starting rate is 10% and the participant can adjust it, with a hard ceiling of 50%.
+- A 50,000-person list producing 2,000 registrations is a 4% example.
+- Signup percentages tend to fall as lists grow.
+
+### Prototype treatment
+
+- The participant controls the percentage; no automatic list-size curve is inferred without defined bands.
+- The resulting registration estimate feeds the existing approved funnel formulas unchanged.
+- Fractional estimates round to the nearest whole registration as a visible provisional convention.
+
+### Remaining clarification
+
+- Confirm the authoritative whole-person rounding rule and whether list-size bands should suggest lower starting rates.

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { LaunchCalculation } from '../domain/calculator'
+import type { EmailReachTrace } from '../domain/beginner'
 import type { LaunchInputs } from '../domain/schema'
 import type { Recommendation, StrategyPlan } from '../domain/strategy'
 import { appVariantHref } from '../variants/appVariant'
@@ -9,6 +10,7 @@ type BeginnerResultsProps = {
   inputs: LaunchInputs
   calculation: LaunchCalculation
   strategy: StrategyPlan
+  emailReachTrace: EmailReachTrace
   onEdit: () => void
   onReset: () => void
 }
@@ -65,6 +67,7 @@ export function BeginnerResults({
   inputs,
   calculation,
   strategy,
+  emailReachTrace,
   onEdit,
   onReset,
 }: BeginnerResultsProps) {
@@ -73,6 +76,7 @@ export function BeginnerResults({
   const money = formatter(inputs.currency)
   const beginnerMoves = makeBeginnerMoves(strategy)
   const registrationGap = selected.paidRegistrationGap
+  const { emailListSize, signupRatePercent: organicSignupRatePercent } = emailReachTrace
 
   const copyPlan = async () => {
     const summary = [
@@ -81,7 +85,7 @@ export function BeginnerResults({
       `Required buyers: ${selected.buyersRequired}`,
       `Required registrations: ${selected.registrationsRequired}`,
       `Live attendees at target: ${selected.attendeesExpected}`,
-      `Expected organic registrations: ${inputs.organicRegistrations}`,
+      `Email reach estimate: ${emailReachTrace.expression} = ${emailReachTrace.result} registrations`,
       `Registration gap: ${registrationGap}`,
       '',
       'Next moves:',
@@ -108,7 +112,7 @@ export function BeginnerResults({
           <span className="red-dot">.</span>
         </h1>
         <p>
-          Using the current organic registration estimate, the playbook points toward{' '}
+          Using the current email-list registration estimate, the playbook points toward{' '}
           <strong>{strategy.recommendedOffer.toLowerCase()}</strong>.
         </p>
       </div>
@@ -144,17 +148,19 @@ export function BeginnerResults({
           <>
             <h2>There is a reach gap to solve.</h2>
             <p>
-              You expect {inputs.organicRegistrations.toLocaleString()} registrations without ads.
-              This working case needs {selected.registrationsRequired.toLocaleString()}, leaving a
-              gap of <strong>{registrationGap.toLocaleString()}</strong>.
+              A list of {emailListSize.toLocaleString()} at {organicSignupRatePercent}% gives about{' '}
+              {inputs.organicRegistrations.toLocaleString()} registrations. This working case needs{' '}
+              {selected.registrationsRequired.toLocaleString()}, leaving a gap of{' '}
+              <strong>{registrationGap.toLocaleString()}</strong>.
             </p>
           </>
         ) : (
           <>
             <h2>Your organic estimate covers the target.</h2>
             <p>
-              Your estimate of {inputs.organicRegistrations.toLocaleString()} organic registrations
-              meets this working case. Treat it as a plan to validate, not a forecast.
+              A list of {emailListSize.toLocaleString()} at {organicSignupRatePercent}% gives about{' '}
+              {inputs.organicRegistrations.toLocaleString()} registrations and meets this working
+              case. Treat it as a plan to validate, not a forecast.
             </p>
           </>
         )}
@@ -182,16 +188,18 @@ export function BeginnerResults({
         <summary>See the selected inputs and sources</summary>
         <div>
           <p>
-            You selected {inputs.conversionRatePercent}% sales conversion,{' '}
-            {inputs.showUpRatePercent}% live attendance, {inputs.groupJoinRatePercent}% group
-            joining and a {inputs.workshopDurationDays}-day workshop. This guided path plans from
-            organic registrations only.
+            Your email reach estimate uses a list of {emailListSize.toLocaleString()} and a{' '}
+            {organicSignupRatePercent}% signup rate. You also selected{' '}
+            {inputs.conversionRatePercent}% sales conversion, {inputs.showUpRatePercent}% live
+            attendance, {inputs.groupJoinRatePercent}% group joining and a{' '}
+            {inputs.workshopDurationDays}-day workshop.
           </p>
           <div className="source-list">
             <SourceChip sourceId="LS-FUNNEL-001" />
             <SourceChip sourceId="LS-ATTENDANCE-001" />
             <SourceChip sourceId="SIGRUN-ATTENDANCE-2026-08-09" />
             <SourceChip sourceId="SIGRUN-WORKSHOP-2026-08-09" />
+            <SourceChip sourceId="SIGRUN-REACH-2026-08-11" />
             <SourceChip sourceId="LS-ADS-001" />
           </div>
           <p>

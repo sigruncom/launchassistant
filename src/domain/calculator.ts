@@ -1,6 +1,6 @@
 import { launchInputSchema, type LaunchInputs } from './schema'
 
-export const CALCULATOR_VERSION = 'prototype-0.2.0'
+export const CALCULATOR_VERSION = 'prototype-0.3.0'
 
 export type ScenarioKey = 'cautious' | 'planning' | 'benchmark'
 

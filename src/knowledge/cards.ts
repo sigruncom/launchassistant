@@ -7,7 +7,7 @@ export type KnowledgeCard = {
   guidance: string
   source:
     | { kind: 'outline'; pages: number[] }
-    | { kind: 'method-owner-feedback'; author: 'Sigrun'; date: '2026-08-09' }
+    | { kind: 'method-owner-feedback'; author: 'Sigrun'; date: string }
   kind: 'benchmark' | 'decision' | 'timeline' | 'guardrail'
 }
 
@@ -123,6 +123,14 @@ export const knowledgeCards = [
       'Sigrun confirmed that the prototype formulas are right. Whether the 1–3% sales rate applies to all registrations or only live attendees remains a separate clarification.',
     source: { kind: 'method-owner-feedback', author: 'Sigrun', date: '2026-08-09' },
     kind: 'guardrail',
+  },
+  {
+    id: 'SIGRUN-REACH-2026-08-11',
+    title: 'Estimate registrations from the email list',
+    guidance:
+      'Ask for email-list size and an expected organic signup percentage. Use 10% as the visible starting point, never allow more than 50%, and let the participant lower the rate for larger lists. A 50,000-person list producing 2,000 registrations is a 4% example.',
+    source: { kind: 'method-owner-feedback', author: 'Sigrun', date: '2026-08-11' },
+    kind: 'benchmark',
   },
 ] as const satisfies readonly KnowledgeCard[]
 

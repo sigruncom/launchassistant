@@ -29,6 +29,7 @@ describe('knowledge provenance', () => {
       'SIGRUN-ATTENDANCE-2026-08-09',
       'SIGRUN-WORKSHOP-2026-08-09',
       'SIGRUN-FORMULAS-2026-08-09',
+      'SIGRUN-REACH-2026-08-11',
     ])
   })
 

@@ -7,6 +7,9 @@ import {
 import {
   beginnerAnswerSchema,
   beginnerBlank,
+  createEmailReachTrace,
+  estimateOrganicRegistrationsFromEmailList,
+  ORGANIC_SIGNUP_RATE_DEFAULT,
   toBeginnerLaunchInputs,
 } from '../src/domain/beginner'
 import { composeStrategy } from '../src/domain/strategy'
@@ -16,7 +19,8 @@ const answerDraft = (overrides: Record<string, unknown> = {}) => ({
   currency: 'EUR',
   price: '997',
   revenueGoal: '12000',
-  organicRegistrations: '180',
+  emailListSize: '1800',
+  organicSignupRatePercent: '10',
   audienceContext: 'other',
   workshopDurationDays: 3,
   showUpRatePercent: '20',
@@ -50,8 +54,13 @@ describe('beginner variant', () => {
     expect(appVariantHref('complete')).toBe('?planner=complete')
   })
 
-  it('starts with every participant answer blank', () => {
-    expect(Object.values(beginnerBlank).every((value) => value === '')).toBe(true)
+  it('starts with only the visible email signup-rate default', () => {
+    expect(beginnerBlank.organicSignupRatePercent).toBe(String(ORGANIC_SIGNUP_RATE_DEFAULT))
+    expect(
+      Object.entries(beginnerBlank)
+        .filter(([key]) => key !== 'organicSignupRatePercent')
+        .every(([, value]) => value === ''),
+    ).toBe(true)
     expect(beginnerAnswerSchema.safeParse(beginnerBlank).success).toBe(false)
   })
 
@@ -61,11 +70,54 @@ describe('beginner variant', () => {
       beginnerAnswerSchema.safeParse(answerDraft({ revenueGoal: '100000001' })).success,
     ).toBe(false)
     expect(
-      beginnerAnswerSchema.safeParse(answerDraft({ organicRegistrations: '100000001' })).success,
+      beginnerAnswerSchema.safeParse(answerDraft({ emailListSize: '100000001' })).success,
+    ).toBe(false)
+    expect(beginnerAnswerSchema.safeParse(answerDraft({ emailListSize: '1.5' })).success).toBe(false)
+    expect(beginnerAnswerSchema.safeParse(answerDraft({ emailListSize: '-1' })).success).toBe(false)
+    expect(
+      beginnerAnswerSchema.safeParse(answerDraft({ organicSignupRatePercent: '51' })).success,
+    ).toBe(false)
+    expect(
+      beginnerAnswerSchema.safeParse(answerDraft({ organicSignupRatePercent: '-0.1' })).success,
     ).toBe(false)
     expect(
       beginnerAnswerSchema.safeParse(answerDraft({ price: '9'.repeat(400) })).success,
     ).toBe(false)
+  })
+
+  it('derives the supplied 50,000-list example without changing the funnel engine', () => {
+    const inputs = toBeginnerLaunchInputs(
+      parsedAnswers({ emailListSize: '50000', organicSignupRatePercent: '4' }),
+    )
+
+    expect(inputs.organicRegistrations).toBe(2_000)
+  })
+
+  it('accepts email signup rates from zero through the 50% ceiling', () => {
+    expect(
+      beginnerAnswerSchema.safeParse(answerDraft({ organicSignupRatePercent: '0' })).success,
+    ).toBe(true)
+    expect(
+      beginnerAnswerSchema.safeParse(answerDraft({ organicSignupRatePercent: '4.5' })).success,
+    ).toBe(true)
+    expect(
+      beginnerAnswerSchema.safeParse(answerDraft({ organicSignupRatePercent: '50' })).success,
+    ).toBe(true)
+  })
+
+  it('rounds the email reach estimate to the nearest whole registration', () => {
+    expect(estimateOrganicRegistrationsFromEmailList(3, 50)).toBe(2)
+    expect(createEmailReachTrace(50_000, 4)).toEqual({
+      id: 'EMAIL-REACH-ESTIMATE',
+      label: 'Estimated registrations from your email list',
+      expression: 'round(50000 × 4%)',
+      result: 2_000,
+      source: 'derived',
+      emailListSize: 50_000,
+      signupRatePercent: 4,
+      rounding: 'nearest whole registration',
+      sourceId: 'SIGRUN-REACH-2026-08-11',
+    })
   })
 
   it.each(['spotsToSell', 'revenueGoal', 'price'] as OfferEconomicsField[])(
@@ -108,7 +160,7 @@ describe('beginner variant', () => {
     ).toBe(false)
   })
 
-  it('maps every displayed planning input instead of inserting rate defaults', () => {
+  it('maps every displayed planning input and the explicit email reach estimate', () => {
     const inputs = toBeginnerLaunchInputs(
       parsedAnswers({
         conversionRatePercent: 1,
@@ -128,6 +180,7 @@ describe('beginner variant', () => {
     expect(inputs.audienceContext).toBe('b2b')
     expect(inputs.replayOffered).toBe(false)
     expect(inputs.showUpBonusPlanned).toBe(true)
+    expect(inputs.organicRegistrations).toBe(180)
   })
 
   it('produces the expected starting plan at the selected 20% show-up rate', () => {

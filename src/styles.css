@@ -624,6 +624,109 @@ button:disabled {
   border: 0;
 }
 
+.email-reach-builder {
+  display: grid;
+  gap: 28px;
+  margin: 0;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 0 32px 32px 32px;
+  background: linear-gradient(145deg, rgba(242, 243, 244, 0.76), rgba(255, 255, 255, 0.96));
+}
+
+.email-reach-builder > legend {
+  padding: 0 8px;
+  color: var(--sigrun-red);
+  font-size: 10px;
+  font-weight: 680;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.email-reach-intro {
+  display: grid;
+  max-width: 650px;
+  gap: 8px;
+}
+
+.email-reach-intro strong {
+  font-size: 19px;
+  font-weight: 560;
+  letter-spacing: -0.02em;
+}
+
+.email-reach-intro p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.email-reach-intro .source-chip {
+  justify-self: start;
+  margin-top: 3px;
+}
+
+.email-reach-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.field .email-reach-label label {
+  margin-bottom: 9px;
+}
+
+.email-reach-label span {
+  margin-bottom: 9px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(204, 0, 0, 0.08);
+  color: var(--sigrun-red);
+  font-size: 9px;
+  font-weight: 680;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.email-reach-output {
+  display: grid;
+  gap: 7px;
+  padding: 22px 24px;
+  border-left: 3px solid var(--sigrun-red);
+  background: var(--sigrun-white);
+}
+
+.email-reach-output span,
+.email-reach-output small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.email-reach-output span {
+  font-weight: 630;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.email-reach-output strong {
+  font-family: 'Geist Mono', monospace;
+  font-size: clamp(19px, 3vw, 28px);
+  font-weight: 470;
+  letter-spacing: -0.035em;
+}
+
+.email-reach-output--waiting strong {
+  color: var(--muted);
+  font-family: 'Geist', sans-serif;
+  font-size: 15px;
+  font-weight: 480;
+  letter-spacing: normal;
+}
+
 .rate-presets {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1923,6 +2026,22 @@ button:disabled {
   .economics-builder {
     margin-inline: -8px;
     padding: 22px 18px;
+  }
+
+  .email-reach-builder {
+    margin-inline: -8px;
+    padding: 24px 18px;
+    border-radius: 0 24px 24px 24px;
+  }
+
+  .email-reach-label {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .email-reach-label span {
+    margin-top: -2px;
   }
 
   .economics-field .field-hint {

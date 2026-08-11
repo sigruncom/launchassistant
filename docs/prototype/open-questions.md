@@ -12,5 +12,7 @@ These questions should be answered before this prototype becomes a production ca
 8. At exactly 3% post-launch conversion, should the client receive an upsell, downsell, neither, or coach review?
 9. Is cost per paid registration entered manually, sourced from prior launches, or estimated by a separate model?
 10. Which offer types, currencies and launch archetypes must the first pilot support?
+11. Should the email signup percentage stay entirely user-selected, or should list-size bands suggest lower starting rates? If bands are wanted, what are the thresholds and rates?
+12. Should an email-list registration estimate round to the nearest whole person, down, or up?
 
 Resolved decisions are recorded in [the Phase 0 validation log](validation-log.md). The interface sends unresolved methodology choices to coach review instead of inventing an answer.

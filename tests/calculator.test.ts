@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CALCULATOR_VERSION,
   calculateLaunch,
   calculateReviewMetrics,
   ceilDivide,
@@ -10,6 +11,8 @@ describe('launch calculator', () => {
   it('calculates the synthetic planning case exactly', () => {
     const result = calculateLaunch(demoInputs)
 
+    expect(result.calculatorVersion).toBe(CALCULATOR_VERSION)
+    expect(result.calculatorVersion).toBe('prototype-0.3.0')
     expect(result.selected.conversionRatePercent).toBe(2)
     expect(result.selected.buyersRequired).toBe(13)
     expect(result.selected.registrationsRequired).toBe(650)
