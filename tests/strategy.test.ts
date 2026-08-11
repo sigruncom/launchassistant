@@ -9,21 +9,62 @@ const strategyFor = (overrides: Partial<LaunchInputs> = {}) => {
 }
 
 describe('document-only strategy composer', () => {
-  it('defaults a mixed audience to a three-day workshop', () => {
+  it('uses the participant-selected three-day workshop', () => {
     const strategy = strategyFor()
 
     expect(strategy.workshopFormat).toBe('Three-day workshop')
     expect(strategy.recommendedOffer).toBe('Group coaching')
   })
 
-  it('uses a one-day workshop only when all narrow readiness conditions are met', () => {
+  it('uses the participant-selected one-day workshop', () => {
     const strategy = strategyFor({
-      launchExperience: 'experienced',
-      audienceWarmth: 'warm',
-      problemAwareness: 'ready',
+      workshopDurationDays: 1,
     })
+    const workshop = strategy.recommendations.find((item) => item.id === 'REC-WORKSHOP')
 
     expect(strategy.workshopFormat).toBe('One-day workshop')
+    expect(workshop?.sourceIds).toContain('SIGRUN-WORKSHOP-2026-08-09')
+    expect(workshop?.sourceIds).not.toContain('LS-WORKSHOP-001')
+  })
+
+  it('sends a one-day high-ticket euro choice to coach review', () => {
+    const strategy = strategyFor({ workshopDurationDays: 1, price: 1_500 })
+
+    expect(strategy.workshopFormat).toBe('One-day workshop')
+    expect(strategy.coachDecisions.some((decision) => decision.includes('above €1,000'))).toBe(true)
+  })
+
+  it('sends a three-day B2B choice to coach review without overriding it', () => {
+    const strategy = strategyFor({ workshopDurationDays: 3, audienceContext: 'b2b' })
+
+    expect(strategy.workshopFormat).toBe('Three-day workshop')
+    expect(strategy.coachDecisions.some((decision) => decision.includes('one day can be'))).toBe(true)
+  })
+
+  it('does not invent a lower-price cutoff for a three-day hobby offer', () => {
+    const strategy = strategyFor({
+      workshopDurationDays: 3,
+      audienceContext: 'hobby',
+      price: 5_000,
+    })
+
+    expect(
+      strategy.coachDecisions.some((decision) =>
+        decision.includes('audience where Sigrun said one day can be a better fit'),
+      ),
+    ).toBe(false)
+  })
+
+  it('uses replay and bonus answers only as attendance context', () => {
+    const plan = strategyFor({
+      showUpRatePercent: 30,
+      replayOffered: false,
+      showUpBonusPlanned: true,
+    })
+    const attendance = plan.recommendations.find((item) => item.id === 'REC-ATTENDANCE')
+
+    expect(attendance?.body).toContain('no replay is planned')
+    expect(attendance?.body).toContain('a show-up bonus is planned')
   })
 
   it('blocks weak audience evidence below ten survey responses', () => {
@@ -68,9 +109,9 @@ describe('document-only strategy composer', () => {
     )
   })
 
-  it('keeps inferred formulas visible as a coach decision', () => {
+  it('keeps the sales-rate denominator visible as a coach decision', () => {
     const strategy = strategyFor()
 
-    expect(strategy.coachDecisions[0]).toContain('inferred reverse-funnel formulas')
+    expect(strategy.coachDecisions[0]).toContain('all workshop registrations or only live attendees')
   })
 })

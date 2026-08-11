@@ -22,7 +22,10 @@ const makeSummary = (
   return [
     `${inputs.offerName}: ${strategy.headline}`,
     strategy.summary,
-    `Expected live attendees: ${scenario.attendeesExpected}`,
+    `Selected workshop: ${inputs.workshopDurationDays} day${inputs.workshopDurationDays === 1 ? '' : 's'}`,
+    `Selected show-up rate: ${inputs.showUpRatePercent}%`,
+    `Live attendees at target: ${scenario.attendeesExpected}`,
+    `Live attendees from current reach: ${scenario.projectedAttendeesExpected}`,
     `Estimated group joins: ${scenario.groupJoinsExpected}`,
     `Registration gap after current ad budget: ${scenario.registrationGapAfterBudget}`,
     '',
@@ -79,12 +82,12 @@ export function StrategyView({
           <strong>{selected.registrationsRequired.toLocaleString()}</strong>
         </div>
         <div>
-          <span>Expected live</span>
+          <span>Live at target</span>
           <strong>{selected.attendeesExpected.toLocaleString()}</strong>
         </div>
         <div>
-          <span>Reach gap</span>
-          <strong>{selected.registrationGapAfterBudget.toLocaleString()}</strong>
+          <span>Live from current reach</span>
+          <strong>{selected.projectedAttendeesExpected.toLocaleString()}</strong>
         </div>
       </div>
 
@@ -138,7 +141,7 @@ export function StrategyView({
               ))}
             </ul>
             <p className="abstention">
-              Anything beyond these sourced rules is not covered by Sigrun’s current playbook.
+              Anything beyond the outline and Sigrun’s recorded feedback stays with a coach.
             </p>
           </div>
         </section>
@@ -159,7 +162,7 @@ export function StrategyView({
 
       <div className="strategy-actions">
         <button className="button button--primary" type="button" onClick={onEdit}>
-          Change an assumption <span aria-hidden="true">→</span>
+          Change my answers <span aria-hidden="true">→</span>
         </button>
         <button className="button button--secondary" type="button" onClick={copySummary}>
           {copied ? 'Copied' : 'Copy summary'} <span aria-hidden="true">↗</span>

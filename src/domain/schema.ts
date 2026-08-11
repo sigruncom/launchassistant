@@ -6,9 +6,8 @@ import {
 
 export const currencyValues = ['EUR', 'USD', 'GBP'] as const
 export const offerTypeValues = ['one-to-one', 'group', 'course', 'undecided'] as const
-export const experienceValues = ['first', 'some', 'experienced'] as const
-export const warmthValues = ['cold', 'mixed', 'warm'] as const
-export const awarenessValues = ['curious', 'aware', 'ready'] as const
+export const audienceContextValues = ['b2b', 'hobby', 'other'] as const
+export const workshopDurationValues = [1, 3] as const
 export const conversionValues = [1, 2, 3] as const
 
 export const launchInputSchema = z
@@ -28,14 +27,16 @@ export const launchInputSchema = z
       .min(0.01)
       .max(offerEconomicsLimits.revenueGoal)
       .refine(hasSupportedCentPrecision, 'Revenue goal can have no more than two decimal places.'),
-    emailListSize: z.number().int().nonnegative().max(100_000_000),
-    socialFollowers: z.number().int().nonnegative().max(100_000_000),
     organicRegistrations: z.number().int().nonnegative().max(100_000_000),
     costPerLead: z.number().finite().nonnegative().max(100_000),
     adBudget: z.number().finite().nonnegative().max(100_000_000),
-    launchExperience: z.enum(experienceValues),
-    audienceWarmth: z.enum(warmthValues),
-    problemAwareness: z.enum(awarenessValues),
+    audienceContext: z.enum(audienceContextValues),
+    workshopDurationDays: z.union([
+      z.literal(workshopDurationValues[0]),
+      z.literal(workshopDurationValues[1]),
+    ]),
+    replayOffered: z.boolean(),
+    showUpBonusPlanned: z.boolean(),
     recentResearch: z.boolean(),
     surveyResponses: z.number().int().nonnegative().max(100_000),
     facebookGroupFit: z.boolean(),
@@ -65,31 +66,17 @@ export const demoInputs: LaunchInputs = {
   currency: 'EUR',
   price: 997,
   revenueGoal: 12_000,
-  emailListSize: 650,
-  socialFollowers: 1_200,
   organicRegistrations: 180,
   costPerLead: 2,
   adBudget: 500,
-  launchExperience: 'some',
-  audienceWarmth: 'mixed',
-  problemAwareness: 'aware',
+  audienceContext: 'other',
+  workshopDurationDays: 3,
+  replayOffered: true,
+  showUpBonusPlanned: false,
   recentResearch: false,
   surveyResponses: 12,
   facebookGroupFit: true,
   conversionRatePercent: 2,
-  showUpRatePercent: 30,
+  showUpRatePercent: 20,
   groupJoinRatePercent: 60,
-}
-
-export const blankInputs: LaunchInputs = {
-  ...demoInputs,
-  offerName: 'My signature offer',
-  emailListSize: 0,
-  socialFollowers: 0,
-  organicRegistrations: 0,
-  adBudget: 0,
-  launchExperience: 'first',
-  audienceWarmth: 'cold',
-  problemAwareness: 'curious',
-  surveyResponses: 0,
 }

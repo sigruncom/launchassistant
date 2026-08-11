@@ -1,31 +1,39 @@
-import { useMemo, useState } from 'react'
-import { calculateLaunch } from './domain/calculator'
+import { useMemo, useRef, useState } from 'react'
 import {
-  blankInputs,
-  demoInputs,
-  launchInputSchema,
-  type LaunchInputs,
-} from './domain/schema'
-import { composeStrategy } from './domain/strategy'
-import { ChoiceGroup, NumberField, ToggleField } from './components/Fields'
+  ChoiceGroup,
+  DraftNumberField,
+  ShowUpRateField,
+} from './components/Fields'
 import { OfferEconomicsFields } from './components/OfferEconomicsFields'
-import { ScenarioSummary } from './components/ScenarioSummary'
+import { StepProgress } from './components/StepProgress'
 import { StrategyView } from './components/StrategyView'
 import { VariantNavigation } from './components/VariantNavigation'
+import { calculateLaunch } from './domain/calculator'
 import {
-  offerEconomicsDraftFromNumbers,
-  offerEconomicsErrors,
-} from './domain/offerEconomics'
+  completeBlank,
+  completeStepErrors,
+  parseCompleteDraft,
+  type CompleteDraft,
+  type ResearchAnswer,
+  type YesNoAnswer,
+} from './domain/complete'
+import { composeStrategy } from './domain/strategy'
+import type { LaunchInputs } from './domain/schema'
 import { useOfferEconomics } from './hooks/useOfferEconomics'
 
 const steps = [
-  { number: '01', short: 'Offer', kicker: 'The offer', title: 'What are you launching?' },
-  { number: '02', short: 'Reach', kicker: 'Your reach', title: 'Who can you realistically invite?' },
-  { number: '03', short: 'Numbers', kicker: 'The assumptions', title: 'Which case should we plan around?' },
-  { number: '04', short: 'Strategy', kicker: 'Your plan', title: 'A launch shape the numbers support' },
+  { short: 'Offer', kicker: 'The offer', title: 'What are you launching?' },
+  { short: 'Revenue target', kicker: 'The goal', title: 'What should this launch achieve?' },
+  { short: 'Reach', kicker: 'Your starting point', title: 'How many registrations can you expect?' },
+  { short: 'Workshop', kicker: 'The format', title: 'Which workshop fits this audience?' },
+  { short: 'Attendance', kicker: 'Live attendance', title: 'What show-up rate will you plan for?' },
+  { short: 'Sales case', kicker: 'The funnel', title: 'Which sales case should we use?' },
+  { short: 'Promotion', kicker: 'Paid reach', title: 'Will paid promotion support the launch?' },
+  { short: 'Research', kicker: 'Audience evidence', title: 'Is the audience evidence ready?' },
+  { short: 'Strategy', kicker: 'Your plan', title: 'A launch shape the numbers support' },
 ] as const
 
-type StepIndex = 0 | 1 | 2 | 3
+type StepIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 
 const currencySymbol: Record<LaunchInputs['currency'], string> = {
   EUR: '€',
@@ -34,27 +42,18 @@ const currencySymbol: Record<LaunchInputs['currency'], string> = {
 }
 
 function App() {
-  const [inputs, setInputs] = useState<LaunchInputs>(demoInputs)
+  const [draft, setDraft] = useState<CompleteDraft>(completeBlank)
   const [activeStep, setActiveStep] = useState<StepIndex>(0)
-  const [announcement, setAnnouncement] = useState('Demo values loaded. Nothing is saved.')
-  const economics = useOfferEconomics(
-    offerEconomicsDraftFromNumbers(demoInputs.price, demoInputs.revenueGoal),
-  )
+  const [errors, setErrors] = useState<string[]>([])
+  const [announcement, setAnnouncement] = useState('Complete planner ready. Nothing is saved.')
+  const errorSummaryRef = useRef<HTMLDivElement>(null)
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null)
+  const resultMainRef = useRef<HTMLElement>(null)
+  const economics = useOfferEconomics({ price: '', spotsToSell: '', revenueGoal: '' })
 
-  const resolvedInputs = useMemo<LaunchInputs | null>(
-    () =>
-      economics.result?.success
-        ? {
-            ...inputs,
-            price: economics.result.numbers.price,
-            revenueGoal: economics.result.numbers.revenueGoal,
-          }
-        : null,
-    [economics.result, inputs],
-  )
   const validation = useMemo(
-    () => (resolvedInputs ? launchInputSchema.safeParse(resolvedInputs) : null),
-    [resolvedInputs],
+    () => parseCompleteDraft(draft, economics.result),
+    [draft, economics.result],
   )
   const validInputs = validation?.success ? validation.data : null
   const calculation = useMemo(
@@ -66,41 +65,57 @@ function App() {
     [validInputs, calculation],
   )
 
-  const update = <Key extends keyof LaunchInputs>(key: Key, value: LaunchInputs[Key]) => {
-    setInputs((current) => ({ ...current, [key]: value }))
+  const update = <Key extends keyof CompleteDraft>(key: Key, value: CompleteDraft[Key]) => {
+    setDraft((current) => ({ ...current, [key]: value }))
+  }
+
+  const focusStepHeading = (step: StepIndex) => {
+    window.requestAnimationFrame(() => {
+      if (step === 8) {
+        resultMainRef.current?.focus()
+        return
+      }
+
+      stepHeadingRef.current?.focus()
+    })
   }
 
   const moveTo = (step: StepIndex) => {
-    if (!validInputs && step > activeStep) {
-      setAnnouncement('Please correct the highlighted assumptions before continuing.')
-      return
+    if (step > activeStep) {
+      const stepErrors = completeStepErrors(activeStep, draft, economics.result)
+      const finalErrors =
+        activeStep === 7 && validation && !validation.success
+          ? validation.error.issues.map((issue) => issue.message)
+          : []
+      const nextErrors = [...new Set([...stepErrors, ...finalErrors])]
+
+      if (nextErrors.length > 0 || (activeStep === 7 && !validInputs)) {
+        setErrors(
+          nextErrors.length > 0 ? nextErrors : ['Complete the required answers before continuing.'],
+        )
+        setAnnouncement('Complete the highlighted questions before continuing.')
+        window.requestAnimationFrame(() => errorSummaryRef.current?.focus())
+        return
+      }
     }
 
+    setErrors([])
     setActiveStep(step)
-    setAnnouncement(`Step ${step + 1} of 4: ${steps[step].short}`)
+    setAnnouncement(`Step ${step + 1} of ${steps.length}: ${steps[step].short}`)
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  const loadDemo = () => {
-    setInputs(demoInputs)
-    economics.reset(offerEconomicsDraftFromNumbers(demoInputs.price, demoInputs.revenueGoal))
-    setActiveStep(0)
-    setAnnouncement('Demo values restored. Nothing is saved.')
+    focusStepHeading(step)
   }
 
   const startOver = () => {
-    setInputs(blankInputs)
+    setDraft(completeBlank)
     economics.reset({ price: '', spotsToSell: '', revenueGoal: '' })
     setActiveStep(0)
-    setAnnouncement('The form was cleared. Nothing was retained.')
+    setErrors([])
+    setAnnouncement('The complete form was cleared. Nothing was retained.')
+    focusStepHeading(0)
   }
 
-  const errors = [
-    ...offerEconomicsErrors(economics.result),
-    ...(validation && !validation.success
-      ? validation.error.issues.map((issue) => issue.message)
-      : []),
-  ]
+  const moneyPrefix = draft.currency ? currencySymbol[draft.currency] : undefined
 
   return (
     <div className="app-shell">
@@ -114,52 +129,38 @@ function App() {
           SIGRUN<span>/</span>LAUNCH ASSISTANT
         </a>
         <VariantNavigation activeVariant="complete" />
-        <button className="demo-button" type="button" onClick={loadDemo}>
-          Restore demo
-        </button>
       </header>
 
       <div className="hero" id="top">
-        <p className="hero-kicker">Launch & Sell · Method prototype</p>
+        <p className="hero-kicker">Launch & Sell · Complete path</p>
         <h1>
           Plan the launch the
           <br />
           numbers can support<span className="red-dot">.</span>
         </h1>
         <p className="hero-copy">
-          Work backwards from your revenue goal, then build a strategy grounded only in
-          Sigrun’s current Launch & Sell outline.
+          Work through one topic at a time. Every answer starts blank, and the calculation appears
+          only after you finish the inputs.
         </p>
       </div>
 
-      <nav className="step-navigation" aria-label="Prototype steps">
-        {steps.map((step, index) => (
-          <button
-            className={activeStep === index ? 'step-button step-button--active' : 'step-button'}
-            type="button"
-            onClick={() => moveTo(index as StepIndex)}
-            aria-current={activeStep === index ? 'step' : undefined}
-            key={step.short}
-          >
-            <span>{step.number}</span>
-            {step.short}
-          </button>
-        ))}
-      </nav>
+      <StepProgress activeStep={activeStep} labels={steps.map((step) => step.short)} />
 
-      {activeStep < 3 ? (
-        <main className="workspace">
+      {activeStep < 8 ? (
+        <main className="workspace workspace--single">
           <section className="input-panel" aria-labelledby="step-title">
             <div className="step-heading">
               <p className="step-kicker">
-                {activeStep + 1} / 3 — {steps[activeStep].kicker}
+                {activeStep + 1} / 8 — {steps[activeStep].kicker}
               </p>
-              <h2 id="step-title">{steps[activeStep].title}</h2>
+              <h2 id="step-title" tabIndex={-1} ref={stepHeadingRef}>
+                {steps[activeStep].title}
+              </h2>
             </div>
 
             {errors.length > 0 ? (
-              <div className="error-summary" role="alert">
-                <strong>Check these assumptions:</strong>
+              <div className="error-summary" role="alert" tabIndex={-1} ref={errorSummaryRef}>
+                <strong>Complete these answers:</strong>
                 <ul>{errors.map((error) => <li key={error}>{error}</li>)}</ul>
               </div>
             ) : null}
@@ -174,48 +175,52 @@ function App() {
                     className="text-input"
                     type="text"
                     maxLength={80}
-                    value={inputs.offerName}
+                    placeholder="Enter a working name"
+                    value={draft.offerName}
                     onChange={(event) => update('offerName', event.target.value)}
                   />
                 </div>
-
-                <ChoiceGroup
+                <ChoiceGroup<CompleteDraft['offerType']>
                   legend="Offer format"
                   name="offer-type"
-                  value={inputs.offerType}
+                  value={draft.offerType}
                   onChange={(value) => update('offerType', value)}
                   columns={4}
                   choices={[
                     { value: 'one-to-one', label: '1:1', detail: 'High-touch' },
-                    { value: 'group', label: 'Group', detail: 'Cohort delivery' },
+                    { value: 'group', label: 'Group', detail: 'Group delivery' },
                     { value: 'course', label: 'Course', detail: 'Scalable' },
-                    { value: 'undecided', label: 'Not sure', detail: 'Let the reach guide it' },
+                    { value: 'undecided', label: 'Not sure', detail: 'Review after the numbers' },
                   ]}
                 />
+              </div>
+            ) : null}
 
+            {activeStep === 1 ? (
+              <div className="form-stack">
                 <div className="field economics-currency-field">
                   <label htmlFor="currency">Currency</label>
                   <select
                     id="currency"
                     className="select-input"
-                    value={inputs.currency}
+                    value={draft.currency}
                     onChange={(event) =>
-                      update('currency', event.target.value as LaunchInputs['currency'])
+                      update('currency', event.target.value as CompleteDraft['currency'])
                     }
                   >
+                    <option value="">Choose currency</option>
                     <option value="EUR">EUR · €</option>
                     <option value="USD">USD · $</option>
                     <option value="GBP">GBP · £</option>
                   </select>
                 </div>
-
                 <OfferEconomicsFields
                   calculatedField={economics.calculatedField}
-                  currency={inputs.currency}
+                  currency={draft.currency || undefined}
                   draft={economics.draft}
                   idPrefix="complete-economics"
                   result={economics.result}
-                  showErrors={Boolean(economics.result && !economics.result.success)}
+                  showErrors={errors.length > 0}
                   sourceOrder={economics.sourceOrder}
                   variant="complete"
                   onChange={economics.update}
@@ -223,151 +228,181 @@ function App() {
               </div>
             ) : null}
 
-            {activeStep === 1 ? (
+            {activeStep === 2 ? (
+              <DraftNumberField
+                id="organic-registrations"
+                label="Expected organic workshop registrations"
+                hint="Use a working estimate based on registrations you can generate without ads."
+                placeholder="Enter your estimate"
+                max={100_000_000}
+                value={draft.organicRegistrations}
+                onChange={(value) => update('organicRegistrations', value)}
+              />
+            ) : null}
+
+            {activeStep === 3 ? (
               <div className="form-stack">
-                <div className="form-grid form-grid--2">
-                  <NumberField
-                    id="email-list"
-                    label="Email-list size"
-                    value={inputs.emailListSize}
-                    onChange={(value) => update('emailListSize', value)}
-                  />
-                  <NumberField
-                    id="social-following"
-                    label="Relevant social following"
-                    value={inputs.socialFollowers}
-                    onChange={(value) => update('socialFollowers', value)}
-                  />
-                </div>
-
-                <NumberField
-                  id="organic-registrations"
-                  label="Expected organic workshop registrations"
-                  hint="A working estimate—not your total audience size."
-                  value={inputs.organicRegistrations}
-                  onChange={(value) => update('organicRegistrations', value)}
-                />
-
-                <ChoiceGroup
-                  legend="Launch experience"
-                  name="experience"
-                  value={inputs.launchExperience}
-                  onChange={(value) => update('launchExperience', value)}
+                <ChoiceGroup<CompleteDraft['audienceContext']>
+                  legend="Which audience type fits best?"
+                  name="complete-audience-context"
+                  value={draft.audienceContext}
+                  onChange={(value) => update('audienceContext', value)}
                   choices={[
-                    { value: 'first', label: 'First launch' },
-                    { value: 'some', label: 'Launched before' },
-                    { value: 'experienced', label: 'Experienced' },
+                    { value: 'b2b', label: 'B2B', detail: 'Time is often the main constraint' },
+                    { value: 'hobby', label: 'Hobby', detail: 'Often a lower-priced offer' },
+                    { value: 'other', label: 'Other', detail: 'Consumer or mixed audience' },
                   ]}
                 />
-
-                <ChoiceGroup
-                  legend="Audience warmth"
-                  name="warmth"
-                  value={inputs.audienceWarmth}
-                  onChange={(value) => update('audienceWarmth', value)}
+                <ChoiceGroup<CompleteDraft['workshopDurationDays']>
+                  legend="Choose the workshop length"
+                  name="complete-workshop-duration"
+                  value={draft.workshopDurationDays}
+                  onChange={(value) => update('workshopDurationDays', value)}
+                  columns={2}
                   choices={[
-                    { value: 'cold', label: 'New / cold' },
-                    { value: 'mixed', label: 'Mixed' },
-                    { value: 'warm', label: 'Warm' },
-                  ]}
-                />
-
-                <ChoiceGroup
-                  legend="Problem awareness"
-                  name="awareness"
-                  value={inputs.problemAwareness}
-                  onChange={(value) => update('problemAwareness', value)}
-                  choices={[
-                    { value: 'curious', label: 'Curious' },
-                    { value: 'aware', label: 'Problem-aware' },
-                    { value: 'ready', label: 'Ready to buy' },
+                    { value: 1, label: 'One day', detail: 'Often suits B2B or lower-priced hobby audiences' },
+                    { value: 3, label: 'Three days', detail: 'Often suits offers above €1,000' },
                   ]}
                 />
               </div>
             ) : null}
 
-            {activeStep === 2 ? (
+            {activeStep === 4 ? (
               <div className="form-stack">
-                <ChoiceGroup
-                  legend="Workshop-to-sale conversion"
-                  name="conversion"
-                  value={inputs.conversionRatePercent}
+                <ShowUpRateField
+                  id="complete-show-up-rate"
+                  value={draft.showUpRatePercent}
+                  onChange={(value) => update('showUpRatePercent', value)}
+                />
+                <ChoiceGroup<YesNoAnswer | ''>
+                  legend="Will registrants receive a replay?"
+                  name="complete-replay"
+                  value={draft.replayOffered}
+                  onChange={(value) => update('replayOffered', value)}
+                  columns={2}
+                  choices={[
+                    { value: 'yes', label: 'Yes', detail: 'A replay will be available' },
+                    { value: 'no', label: 'No', detail: 'Live attendance matters more' },
+                  ]}
+                />
+                <ChoiceGroup<YesNoAnswer | ''>
+                  legend="Will you offer a live show-up bonus?"
+                  name="complete-show-up-bonus"
+                  value={draft.showUpBonusPlanned}
+                  onChange={(value) => update('showUpBonusPlanned', value)}
+                  columns={2}
+                  choices={[
+                    { value: 'yes', label: 'Yes', detail: 'A relevant live bonus is planned' },
+                    { value: 'no', label: 'No', detail: 'No attendance bonus is planned' },
+                  ]}
+                />
+              </div>
+            ) : null}
+
+            {activeStep === 5 ? (
+              <div className="form-stack">
+                <ChoiceGroup<CompleteDraft['conversionRatePercent']>
+                  legend="Workshop-registration-to-sale conversion"
+                  name="complete-conversion"
+                  value={draft.conversionRatePercent}
                   onChange={(value) => update('conversionRatePercent', value)}
                   choices={[
                     { value: 1, label: '1% · Cautious', detail: 'Explicit downside' },
                     { value: 2, label: '2% · Planning', detail: 'Working case' },
                     { value: 3, label: '3% · Benchmark', detail: 'Stated average' },
                   ]}
-                  hint="The outline explicitly says 1–2% is possible and describes 3% as average."
+                  hint="The outline says 1–2% is possible and describes 3% as average."
                 />
+                <DraftNumberField
+                  id="group-join-rate"
+                  label="Expected workshop-group join rate"
+                  hint="The outline gives 60% as the general example and 70% as a historical example."
+                  placeholder="Enter a rate"
+                  suffix="%"
+                  min={1}
+                  max={100}
+                  value={draft.groupJoinRatePercent}
+                  onChange={(value) => update('groupJoinRatePercent', value)}
+                />
+              </div>
+            ) : null}
 
-                <div className="form-grid form-grid--2">
-                  <NumberField
-                    id="show-up-rate"
-                    label="Expected live attendance"
-                    suffix="%"
-                    min={1}
-                    max={100}
-                    value={inputs.showUpRatePercent}
-                    onChange={(value) => update('showUpRatePercent', value)}
-                  />
-                  <NumberField
-                    id="group-join-rate"
-                    label="Expected group join rate"
-                    suffix="%"
-                    min={1}
-                    max={100}
-                    value={inputs.groupJoinRatePercent}
-                    onChange={(value) => update('groupJoinRatePercent', value)}
-                  />
-                </div>
+            {activeStep === 6 ? (
+              <div className="form-stack">
+                <ChoiceGroup<YesNoAnswer | ''>
+                  legend="Are you planning paid promotion for this launch?"
+                  name="complete-paid-promotion"
+                  value={draft.paidPromotionPlanned}
+                  onChange={(value) => update('paidPromotionPlanned', value)}
+                  columns={2}
+                  choices={[
+                    { value: 'yes', label: 'Yes', detail: 'Include a paid reach check' },
+                    { value: 'no', label: 'No', detail: 'Plan from organic reach only' },
+                  ]}
+                />
+                {draft.paidPromotionPlanned === 'yes' ? (
+                  <div className="form-grid form-grid--2">
+                    <DraftNumberField
+                      id="cost-per-lead"
+                      label="Cost per paid registration"
+                      hint="Use your own evidence; no authoritative default is defined."
+                      prefix={moneyPrefix}
+                      placeholder="Enter cost"
+                      step={0.01}
+                      max={100_000}
+                      value={draft.costPerLead}
+                      onChange={(value) => update('costPerLead', value)}
+                    />
+                    <DraftNumberField
+                      id="ad-budget"
+                      label="Available ad budget"
+                      prefix={moneyPrefix}
+                      placeholder="Enter budget"
+                      step={0.01}
+                      max={100_000_000}
+                      value={draft.adBudget}
+                      onChange={(value) => update('adBudget', value)}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
-                <div className="form-grid form-grid--2">
-                  <NumberField
-                    id="cost-per-lead"
-                    label="Cost per paid registration"
-                    hint="The source provides no authoritative default."
-                    prefix={currencySymbol[inputs.currency]}
-                    step={0.1}
-                    value={inputs.costPerLead}
-                    onChange={(value) => update('costPerLead', value)}
-                  />
-                  <NumberField
-                    id="ad-budget"
-                    label="Available ad budget"
-                    prefix={currencySymbol[inputs.currency]}
-                    step={50}
-                    value={inputs.adBudget}
-                    onChange={(value) => update('adBudget', value)}
-                  />
-                </div>
-
-                <div className="form-grid form-grid--2">
-                  <ToggleField
-                    id="recent-research"
-                    label="Recent client research"
-                    detail="Interviews or a recent survey with this audience"
-                    checked={inputs.recentResearch}
-                    onChange={(value) => update('recentResearch', value)}
-                  />
-                  <ToggleField
-                    id="facebook-fit"
-                    label="Workshop group fits the audience"
-                    detail="A community space supports interaction"
-                    checked={inputs.facebookGroupFit}
-                    onChange={(value) => update('facebookGroupFit', value)}
-                  />
-                </div>
-
-                {!inputs.recentResearch ? (
-                  <NumberField
+            {activeStep === 7 ? (
+              <div className="form-stack">
+                <ChoiceGroup<ResearchAnswer | ''>
+                  legend="Is recent client research confirmed?"
+                  name="complete-research"
+                  value={draft.recentResearch}
+                  onChange={(value) => update('recentResearch', value)}
+                  columns={2}
+                  choices={[
+                    { value: 'yes', label: 'Yes', detail: 'Recent interviews or survey evidence' },
+                    { value: 'not-yet', label: 'Not yet', detail: 'Make this a next step' },
+                  ]}
+                />
+                {draft.recentResearch === 'not-yet' ? (
+                  <DraftNumberField
                     id="survey-responses"
                     label="Survey responses collected"
-                    hint="The source sets 10 as the minimum and 100 as the goal."
-                    value={inputs.surveyResponses}
+                    hint="The outline sets 10 as the minimum and 100 as the goal."
+                    placeholder="Enter a whole number"
+                    max={100_000}
+                    value={draft.surveyResponses}
                     onChange={(value) => update('surveyResponses', value)}
                   />
                 ) : null}
+                <ChoiceGroup<YesNoAnswer | ''>
+                  legend="Would an online workshop group suit this audience?"
+                  name="complete-group-fit"
+                  value={draft.facebookGroupFit}
+                  onChange={(value) => update('facebookGroupFit', value)}
+                  columns={2}
+                  choices={[
+                    { value: 'yes', label: 'Yes', detail: 'A community space fits' },
+                    { value: 'no', label: 'No', detail: 'Use a different live space' },
+                  ]}
+                />
               </div>
             ) : null}
 
@@ -385,38 +420,22 @@ function App() {
                 className="button button--primary"
                 type="button"
                 onClick={() => moveTo((activeStep + 1) as StepIndex)}
-                disabled={!validInputs}
               >
-                {activeStep === 2 ? 'Build my strategy' : 'Continue'}{' '}
+                {activeStep === 7 ? 'Build my strategy' : 'Continue'}{' '}
                 <span aria-hidden="true">→</span>
               </button>
             </div>
           </section>
-
-          {calculation && validInputs ? (
-            <ScenarioSummary inputs={validInputs} calculation={calculation} />
-          ) : (
-            <aside className="calculation-panel calculation-panel--invalid" role="status">
-              <p className="panel-eyebrow">Calculation paused</p>
-              <h2>Check the inputs.</h2>
-              <p className="equation-copy">
-                The calculator will resume as soon as the current values are valid.
-              </p>
-              <ul>
-                {errors.map((error) => <li key={error}>{error}</li>)}
-              </ul>
-            </aside>
-          )}
         </main>
       ) : null}
 
-      {activeStep === 3 && validInputs && calculation && strategy ? (
-        <main className="strategy-main">
+      {activeStep === 8 && validInputs && calculation && strategy ? (
+        <main className="strategy-main" tabIndex={-1} ref={resultMainRef}>
           <StrategyView
             inputs={validInputs}
             calculation={calculation}
             strategy={strategy}
-            onEdit={() => moveTo(2)}
+            onEdit={() => moveTo(0)}
             onReset={startOver}
           />
         </main>
@@ -427,10 +446,10 @@ function App() {
       <footer className="site-footer">
         <div className="wordmark wordmark--footer">SIGRUN</div>
         <p>
-          Internal methodology prototype · no authentication · no persistence · no external model
+          Complete methodology prototype · no authentication · no persistence · no external model
           calls
         </p>
-        <span>Calculator {calculation?.calculatorVersion ?? 'unavailable'}</span>
+        <span>Calculator {calculation?.calculatorVersion ?? 'not started'}</span>
       </footer>
     </div>
   )

@@ -13,7 +13,8 @@ describe('launch calculator', () => {
     expect(result.selected.conversionRatePercent).toBe(2)
     expect(result.selected.buyersRequired).toBe(13)
     expect(result.selected.registrationsRequired).toBe(650)
-    expect(result.selected.attendeesExpected).toBe(195)
+    expect(result.selected.attendeesExpected).toBe(130)
+    expect(result.selected.projectedAttendeesExpected).toBe(86)
     expect(result.selected.groupJoinsExpected).toBe(390)
     expect(result.selected.paidRegistrationGap).toBe(470)
     expect(result.selected.requiredAdSpendCents).toBe(94_000)
@@ -37,6 +38,32 @@ describe('launch calculator', () => {
       { rate: 2, registrations: 650 },
       { rate: 3, registrations: 434 },
     ])
+  })
+
+  it.each([
+    [10, 65],
+    [20, 130],
+    [30, 195],
+    [70, 455],
+  ])('uses an explicit %s%% show-up rate for target attendance', (rate, attendees) => {
+    const result = calculateLaunch({ ...demoInputs, showUpRatePercent: rate })
+
+    expect(result.selected.attendeesExpected).toBe(attendees)
+  })
+
+  it('does not reinterpret show-up rate as the sales-conversion denominator', () => {
+    const low = calculateLaunch({ ...demoInputs, showUpRatePercent: 10 }).selected
+    const high = calculateLaunch({ ...demoInputs, showUpRatePercent: 70 }).selected
+
+    expect(high.buyersRequired).toBe(low.buyersRequired)
+    expect(high.registrationsRequired).toBe(low.registrationsRequired)
+    expect(high.projectedRevenueCents).toBe(low.projectedRevenueCents)
+    expect(high.attendeesExpected).toBeGreaterThan(low.attendeesExpected)
+  })
+
+  it('allows a participant rate above the recorded high without exceeding 100%', () => {
+    expect(calculateLaunch({ ...demoInputs, showUpRatePercent: 71 }).selected.attendeesExpected).toBe(462)
+    expect(() => calculateLaunch({ ...demoInputs, showUpRatePercent: 101 })).toThrow()
   })
 
   it('reproduces the worked launch-review example', () => {

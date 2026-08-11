@@ -87,7 +87,7 @@ export function BeginnerResults({
       'Next moves:',
       ...beginnerMoves.map((move) => `- ${move.title}: ${move.body}`),
       '',
-      'Working assumptions: 2% conversion, 30% live attendance, 60% group joining, organic-only planning.',
+      `Selected inputs: ${inputs.conversionRatePercent}% sales conversion, ${inputs.showUpRatePercent}% live attendance, ${inputs.groupJoinRatePercent}% group joining, ${inputs.workshopDurationDays}-day workshop.`,
     ].join('\n')
 
     try {
@@ -130,6 +130,10 @@ export function BeginnerResults({
           <div>
             <span>Live attendees at target</span>
             <strong>{selected.attendeesExpected.toLocaleString()}</strong>
+          </div>
+          <div>
+            <span>Live from current reach</span>
+            <strong>{selected.projectedAttendeesExpected.toLocaleString()}</strong>
           </div>
         </div>
       </div>
@@ -175,21 +179,25 @@ export function BeginnerResults({
       </section>
 
       <details className="beginner-assumptions">
-        <summary>See the assumptions and sources</summary>
+        <summary>See the selected inputs and sources</summary>
         <div>
           <p>
-            This beginner plan fixes advanced settings at a 2% working conversion case, 30% live
-            attendance and 60% group joining. It assumes organic-only promotion and a workshop
-            community that fits the audience.
+            You selected {inputs.conversionRatePercent}% sales conversion,{' '}
+            {inputs.showUpRatePercent}% live attendance, {inputs.groupJoinRatePercent}% group
+            joining and a {inputs.workshopDurationDays}-day workshop. This guided path plans from
+            organic registrations only.
           </p>
           <div className="source-list">
             <SourceChip sourceId="LS-FUNNEL-001" />
             <SourceChip sourceId="LS-ATTENDANCE-001" />
+            <SourceChip sourceId="SIGRUN-ATTENDANCE-2026-08-09" />
+            <SourceChip sourceId="SIGRUN-WORKSHOP-2026-08-09" />
             <SourceChip sourceId="LS-ADS-001" />
           </div>
           <p>
-            These are planning estimates. The linked legacy calculator is not in the source
-            document, so Sigrun still needs to approve the reverse-funnel formula.
+            These are planning estimates. Sigrun approved the prototype formulas; one point still
+            needs clarification: whether the 1–3% sales rate applies to all registrations or only
+            live attendees.
           </p>
         </div>
       </details>

@@ -13,13 +13,15 @@ const currencySymbol: Record<LaunchInputs['currency'], string> = {
   GBP: '£',
 }
 
-const moneyFormatter = (currency: LaunchInputs['currency']) =>
-  new Intl.NumberFormat('en', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  })
+const moneyFormatter = (currency?: LaunchInputs['currency']) =>
+  currency
+    ? new Intl.NumberFormat('en', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      })
+    : new Intl.NumberFormat('en', { maximumFractionDigits: 2 })
 
 const fieldDetails: Record<
   OfferEconomicsField,
@@ -28,19 +30,19 @@ const fieldDetails: Record<
   price: {
     complete: 'Price per buyer',
     beginner: 'Price per client',
-    placeholder: '997',
+    placeholder: 'Enter price',
     prefix: true,
   },
   spotsToSell: {
     complete: 'Spots to sell',
     beginner: 'Client spots',
-    placeholder: '13',
+    placeholder: 'Enter clients',
     prefix: false,
   },
   revenueGoal: {
     complete: 'Revenue goal',
     beginner: 'Planned sales revenue',
-    placeholder: '12000',
+    placeholder: 'Enter revenue',
     prefix: true,
   },
 }
@@ -125,7 +127,7 @@ function EconomicsNumberField({
 
 type OfferEconomicsFieldsProps = {
   calculatedField: OfferEconomicsField | null
-  currency: LaunchInputs['currency']
+  currency?: LaunchInputs['currency']
   draft: OfferEconomicsDraft
   idPrefix: string
   result: OfferEconomicsResult | null
@@ -147,7 +149,7 @@ export function OfferEconomicsFields({
   onChange,
 }: OfferEconomicsFieldsProps) {
   const money = moneyFormatter(currency)
-  const symbol = currencySymbol[currency]
+  const symbol = currency ? currencySymbol[currency] : undefined
   const exact = result?.success ? result.exact : null
   const [valueAnnouncement, setValueAnnouncement] = useState('')
   const calculatedLabel = calculatedField

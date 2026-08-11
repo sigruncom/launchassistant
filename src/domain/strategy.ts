@@ -29,29 +29,41 @@ const projectedOffer = (registrations: number): StrategyPlan['recommendedOffer']
   return 'Group coaching or online course'
 }
 
-const hasOneDayConditions = (inputs: LaunchInputs) =>
-  inputs.launchExperience === 'experienced' &&
-  inputs.audienceWarmth === 'warm' &&
-  inputs.problemAwareness === 'ready'
-
 export const composeStrategy = (
   inputs: LaunchInputs,
   calculation: LaunchCalculation,
 ): StrategyPlan => {
   const selected = calculation.selected
-  const workshopFormat = hasOneDayConditions(inputs)
+  const workshopFormat = inputs.workshopDurationDays === 1
     ? 'One-day workshop'
     : 'Three-day workshop'
   const recommendedOffer = projectedOffer(selected.projectedRegistrations)
+  const audienceDescription =
+    inputs.audienceContext === 'b2b'
+      ? 'a time-constrained B2B audience'
+      : inputs.audienceContext === 'hobby'
+        ? 'a hobby audience'
+        : 'this audience'
+  const attendanceSignals = [
+    inputs.replayOffered ? 'a replay is planned' : 'no replay is planned',
+    inputs.showUpBonusPlanned ? 'a show-up bonus is planned' : 'no show-up bonus is planned',
+  ].join(' and ')
   const recommendations: Recommendation[] = [
     {
       id: 'REC-WORKSHOP',
       title: workshopFormat,
       body:
         workshopFormat === 'One-day workshop'
-          ? 'Your experience and warm, purchase-ready audience meet the current playbook’s narrow conditions for a one-day format.'
-          : 'Use three days to build trust, increase problem awareness and make the gap to the paid offer clear.',
-      sourceIds: ['LS-WORKSHOP-001', 'LS-GAP-001'],
+          ? `You chose one day for ${audienceDescription}. This can fit B2B audiences with less time and lower-priced hobby audiences.`
+          : `You chose three days for ${audienceDescription}. This gives more time to build trust and can suit offers above €1,000.`,
+      sourceIds: ['SIGRUN-WORKSHOP-2026-08-09', 'LS-GAP-001'],
+      tone: 'primary',
+    },
+    {
+      id: 'REC-ATTENDANCE',
+      title: `${inputs.showUpRatePercent}% live show-up case`,
+      body: `At this rate, the target implies ${selected.attendeesExpected.toLocaleString()} live attendees. Typical cases are 10%, 20% and 30%; ${attendanceSignals}.`,
+      sourceIds: ['LS-ATTENDANCE-001', 'SIGRUN-ATTENDANCE-2026-08-09'],
       tone: 'primary',
     },
     {
@@ -65,8 +77,33 @@ export const composeStrategy = (
 
   const nextMoves: Recommendation[] = []
   const coachDecisions: string[] = [
-    'Approve the inferred reverse-funnel formulas; the linked legacy calculator is not included in the source document.',
+    'Confirm whether the 1–3% sales conversion applies to all workshop registrations or only live attendees.',
   ]
+
+  if (
+    inputs.workshopDurationDays === 1 &&
+    inputs.currency === 'EUR' &&
+    inputs.price > 1_000
+  ) {
+    coachDecisions.push(
+      'You selected one day for an offer above €1,000; Sigrun identified three days as the stronger signal at this price.',
+    )
+  }
+
+  if (
+    inputs.workshopDurationDays === 3 &&
+    inputs.audienceContext === 'b2b'
+  ) {
+    coachDecisions.push(
+      'You selected three days for an audience where Sigrun said one day can be a better fit; confirm the choice with a coach.',
+    )
+  }
+
+  if (inputs.showUpRatePercent > 30 && inputs.replayOffered) {
+    coachDecisions.push(
+      'The selected show-up rate is above the typical 10–30% cases while a replay is planned; confirm it from historical evidence.',
+    )
+  }
 
   if (!inputs.recentResearch && inputs.surveyResponses < 10) {
     nextMoves.push({

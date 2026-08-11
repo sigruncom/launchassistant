@@ -26,7 +26,7 @@ export function ScenarioSummary({ inputs, calculation }: ScenarioSummaryProps) {
     <aside className="calculation-panel" aria-label="Live launch calculation">
       <div className="panel-eyebrow">
         <span>Live calculation</span>
-        <span className="version-badge">v0.1</span>
+        <span className="version-badge">v0.2</span>
       </div>
 
       <p className="equation-intro">To reach</p>
@@ -73,8 +73,8 @@ export function ScenarioSummary({ inputs, calculation }: ScenarioSummaryProps) {
 
       <div className="metric-pair">
         <div>
-          <span>Paid gap before budget</span>
-          <strong>{selected.paidRegistrationGap.toLocaleString()}</strong>
+          <span>Live from current reach</span>
+          <strong>{selected.projectedAttendeesExpected.toLocaleString()}</strong>
         </div>
         <div>
           <span>Ad spend required</span>
@@ -112,10 +112,10 @@ export function ScenarioSummary({ inputs, calculation }: ScenarioSummaryProps) {
       </div>
 
       <div className="source-note">
-        <SourceChip sourceId="LS-FUNNEL-001" />
+        <SourceChip sourceId="SIGRUN-FORMULAS-2026-08-09" />
         <p>
-          The 1–3% rates are sourced. Reverse-funnel formulas are prototype assumptions awaiting
-          Sigrun’s approval.
+          Sigrun approved the prototype formulas. The sales-rate denominator still needs one
+          clarification.
         </p>
       </div>
     </aside>

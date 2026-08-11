@@ -9,7 +9,7 @@ export const resolveAppVariant = (
 ): AppVariant => {
   if (isAppVariant(queryValue)) return queryValue
   if (isAppVariant(configuredDefault)) return configuredDefault
-  return 'complete'
+  return 'beginner'
 }
 
 export const appVariantHref = (variant: AppVariant) => `?planner=${variant}`

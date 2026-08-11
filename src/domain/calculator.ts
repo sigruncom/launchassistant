@@ -1,6 +1,6 @@
 import { launchInputSchema, type LaunchInputs } from './schema'
 
-export const CALCULATOR_VERSION = 'prototype-0.1.0'
+export const CALCULATOR_VERSION = 'prototype-0.2.0'
 
 export type ScenarioKey = 'cautious' | 'planning' | 'benchmark'
 
@@ -9,7 +9,7 @@ export type FormulaTrace = {
   label: string
   expression: string
   result: number
-  source: 'derived' | 'source-backed default'
+  source: 'derived' | 'user input'
 }
 
 export type LaunchScenario = {
@@ -19,6 +19,7 @@ export type LaunchScenario = {
   buyersRequired: number
   registrationsRequired: number
   attendeesExpected: number
+  projectedAttendeesExpected: number
   groupJoinsExpected: number
   paidRegistrationGap: number
   requiredAdSpendCents: number
@@ -86,6 +87,9 @@ export const calculateLaunch = (rawInputs: LaunchInputs): LaunchCalculation => {
       costPerLeadCents > 0 ? Math.floor(adBudgetCents / costPerLeadCents) : 0
     const projectedRegistrations =
       inputs.organicRegistrations + budgetSupportedPaidRegistrations
+    const projectedAttendeesExpected = Math.round(
+      projectedRegistrations * (inputs.showUpRatePercent / 100),
+    )
     const projectedBuyers = Math.floor(
       projectedRegistrations * (scenario.conversionRatePercent / 100),
     )
@@ -100,6 +104,7 @@ export const calculateLaunch = (rawInputs: LaunchInputs): LaunchCalculation => {
       buyersRequired,
       registrationsRequired,
       attendeesExpected,
+      projectedAttendeesExpected,
       groupJoinsExpected,
       paidRegistrationGap,
       requiredAdSpendCents,
@@ -128,7 +133,7 @@ export const calculateLaunch = (rawInputs: LaunchInputs): LaunchCalculation => {
           label: 'Expected live attendance',
           expression: `${registrationsRequired} × ${inputs.showUpRatePercent}%`,
           result: attendeesExpected,
-          source: 'source-backed default',
+          source: 'user input',
         },
         {
           id: 'FORMULA-PAID-GAP-001',

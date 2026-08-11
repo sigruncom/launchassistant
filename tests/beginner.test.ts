@@ -10,18 +10,23 @@ import {
   toBeginnerLaunchInputs,
 } from '../src/domain/beginner'
 import { composeStrategy } from '../src/domain/strategy'
-import {
-  appVariantHref,
-  resolveAppVariant,
-} from '../src/variants/appVariant'
+import { appVariantHref, resolveAppVariant } from '../src/variants/appVariant'
 
 const answerDraft = (overrides: Record<string, unknown> = {}) => ({
   currency: 'EUR',
   price: '997',
   revenueGoal: '12000',
   organicRegistrations: '180',
-  readiness: 'building',
+  audienceContext: 'other',
+  workshopDurationDays: 3,
+  showUpRatePercent: '20',
+  replayOffered: 'yes',
+  showUpBonusPlanned: 'no',
+  conversionRatePercent: 2,
+  groupJoinRatePercent: '60',
   recentResearch: 'not-yet',
+  surveyResponses: '12',
+  facebookGroupFit: 'yes',
   ...overrides,
 })
 
@@ -34,10 +39,10 @@ describe('beginner variant', () => {
     expect(resolveAppVariant('complete', 'beginner')).toBe('complete')
   })
 
-  it('falls back safely when the URL choice is missing or invalid', () => {
+  it('opens the guided beginner path when no valid variant is configured', () => {
     expect(resolveAppVariant(undefined, 'beginner')).toBe('beginner')
-    expect(resolveAppVariant(undefined)).toBe('complete')
-    expect(resolveAppVariant('unexpected')).toBe('complete')
+    expect(resolveAppVariant(undefined)).toBe('beginner')
+    expect(resolveAppVariant('unexpected')).toBe('beginner')
   })
 
   it('creates shareable links containing only the selected planner version', () => {
@@ -45,7 +50,8 @@ describe('beginner variant', () => {
     expect(appVariantHref('complete')).toBe('?planner=complete')
   })
 
-  it('does not accept an unanswered beginner form', () => {
+  it('starts with every participant answer blank', () => {
+    expect(Object.values(beginnerBlank).every((value) => value === '')).toBe(true)
     expect(beginnerAnswerSchema.safeParse(beginnerBlank).success).toBe(false)
   })
 
@@ -86,36 +92,67 @@ describe('beginner variant', () => {
     },
   )
 
-  it('maps beginner answers to disclosed organic-only planning defaults', () => {
-    const inputs = toBeginnerLaunchInputs(parsedAnswers())
-
-    expect(inputs.offerType).toBe('undecided')
-    expect(inputs.conversionRatePercent).toBe(2)
-    expect(inputs.showUpRatePercent).toBe(30)
-    expect(inputs.groupJoinRatePercent).toBe(60)
-    expect(inputs.adBudget).toBe(0)
-    expect(inputs.costPerLead).toBe(0)
-    expect(inputs.recentResearch).toBe(false)
+  it.each([10, 20, 30, 70])('accepts an explicitly selected %s%% show-up rate', (rate) => {
+    const inputs = toBeginnerLaunchInputs(
+      parsedAnswers({ showUpRatePercent: String(rate) }),
+    )
+    expect(inputs.showUpRatePercent).toBe(rate)
   })
 
-  it('produces the expected beginner starting plan', () => {
+  it('does not turn the recorded 70% high into an invented maximum', () => {
+    expect(
+      beginnerAnswerSchema.safeParse(answerDraft({ showUpRatePercent: '100' })).success,
+    ).toBe(true)
+    expect(
+      beginnerAnswerSchema.safeParse(answerDraft({ showUpRatePercent: '101' })).success,
+    ).toBe(false)
+  })
+
+  it('maps every displayed planning input instead of inserting rate defaults', () => {
+    const inputs = toBeginnerLaunchInputs(
+      parsedAnswers({
+        conversionRatePercent: 1,
+        showUpRatePercent: '30',
+        groupJoinRatePercent: '70',
+        workshopDurationDays: 1,
+        audienceContext: 'b2b',
+        replayOffered: 'no',
+        showUpBonusPlanned: 'yes',
+      }),
+    )
+
+    expect(inputs.conversionRatePercent).toBe(1)
+    expect(inputs.showUpRatePercent).toBe(30)
+    expect(inputs.groupJoinRatePercent).toBe(70)
+    expect(inputs.workshopDurationDays).toBe(1)
+    expect(inputs.audienceContext).toBe('b2b')
+    expect(inputs.replayOffered).toBe(false)
+    expect(inputs.showUpBonusPlanned).toBe(true)
+  })
+
+  it('produces the expected starting plan at the selected 20% show-up rate', () => {
     const inputs = toBeginnerLaunchInputs(parsedAnswers())
     const calculation = calculateLaunch(inputs)
 
     expect(calculation.selected.buyersRequired).toBe(13)
     expect(calculation.selected.registrationsRequired).toBe(650)
-    expect(calculation.selected.attendeesExpected).toBe(195)
+    expect(calculation.selected.attendeesExpected).toBe(130)
+    expect(calculation.selected.projectedAttendeesExpected).toBe(36)
     expect(calculation.selected.paidRegistrationGap).toBe(470)
   })
 
-  it('uses a one-day workshop only for the explicitly ready situation', () => {
-    const readyInputs = toBeginnerLaunchInputs(parsedAnswers({ readiness: 'ready' }))
-    const buildingInputs = toBeginnerLaunchInputs(parsedAnswers())
+  it('always respects the participant workshop choice', () => {
+    const oneDayInputs = toBeginnerLaunchInputs(
+      parsedAnswers({ workshopDurationDays: 1, audienceContext: 'other' }),
+    )
+    const threeDayInputs = toBeginnerLaunchInputs(
+      parsedAnswers({ workshopDurationDays: 3, audienceContext: 'b2b' }),
+    )
 
-    expect(composeStrategy(readyInputs, calculateLaunch(readyInputs)).workshopFormat).toBe(
+    expect(composeStrategy(oneDayInputs, calculateLaunch(oneDayInputs)).workshopFormat).toBe(
       'One-day workshop',
     )
-    expect(composeStrategy(buildingInputs, calculateLaunch(buildingInputs)).workshopFormat).toBe(
+    expect(composeStrategy(threeDayInputs, calculateLaunch(threeDayInputs)).workshopFormat).toBe(
       'Three-day workshop',
     )
   })

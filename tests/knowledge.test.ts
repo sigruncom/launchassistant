@@ -11,12 +11,25 @@ import {
 describe('knowledge provenance', () => {
   it('keeps every source page inside the verified 37-page PDF', () => {
     for (const card of knowledgeCards) {
-      expect(card.pages.length).toBeGreaterThan(0)
-      for (const page of card.pages) {
+      if (card.source.kind !== 'outline') continue
+      expect(card.source.pages.length).toBeGreaterThan(0)
+      for (const page of card.source.pages) {
         expect(page).toBeGreaterThanOrEqual(1)
         expect(page).toBeLessThanOrEqual(SOURCE_PAGE_COUNT)
       }
     }
+  })
+
+  it('keeps Sigrun feedback separate from PDF page citations', () => {
+    const feedbackCards = knowledgeCards.filter(
+      (card) => card.source.kind === 'method-owner-feedback',
+    )
+
+    expect(feedbackCards.map((card) => card.id)).toEqual([
+      'SIGRUN-ATTENDANCE-2026-08-09',
+      'SIGRUN-WORKSHOP-2026-08-09',
+      'SIGRUN-FORMULAS-2026-08-09',
+    ])
   })
 
   it('ensures every displayed recommendation cites a real knowledge card', () => {
