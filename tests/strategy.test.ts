@@ -109,9 +109,12 @@ describe('document-only strategy composer', () => {
     )
   })
 
-  it('keeps the sales-rate denominator visible as a coach decision', () => {
+  it('does not ask a coach to resolve the confirmed sales-conversion base', () => {
     const strategy = strategyFor()
 
-    expect(strategy.coachDecisions[0]).toContain('all workshop registrations or only live attendees')
+    expect(
+      strategy.coachDecisions.some((decision) => decision.includes('live attendees')),
+    ).toBe(false)
+    expect(strategy.summary).toContain('workshop-signup-to-sale conversion')
   })
 })

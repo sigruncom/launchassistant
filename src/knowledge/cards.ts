@@ -119,8 +119,7 @@ export const knowledgeCards = [
   {
     id: 'SIGRUN-FORMULAS-2026-08-09',
     title: 'Reverse-funnel formulas approved for the prototype',
-    guidance:
-      'Sigrun confirmed that the prototype formulas are right. Whether the 1–3% sales rate applies to all registrations or only live attendees remains a separate clarification.',
+    guidance: 'Sigrun confirmed that the prototype formulas are right.',
     source: { kind: 'method-owner-feedback', author: 'Sigrun', date: '2026-08-09' },
     kind: 'guardrail',
   },
@@ -130,6 +129,22 @@ export const knowledgeCards = [
     guidance:
       'Ask for email-list size and an expected organic signup percentage. Use 10% as the visible starting point, never allow more than 50%, and let the participant lower the rate for larger lists. A 50,000-person list producing 2,000 registrations is a 4% example.',
     source: { kind: 'method-owner-feedback', author: 'Sigrun', date: '2026-08-11' },
+    kind: 'benchmark',
+  },
+  {
+    id: 'SIGRUN-CONVERSION-2026-08-16',
+    title: 'Apply sales conversion to every workshop signup',
+    guidance:
+      'The 1–3% sales conversion applies to all workshop signups, whether or not they attend live.',
+    source: { kind: 'method-owner-feedback', author: 'Sigrun', date: '2026-08-16' },
+    kind: 'guardrail',
+  },
+  {
+    id: 'SIGRUN-REACH-2026-08-16',
+    title: 'Lower reach expectations for bigger or older lists',
+    guidance:
+      'Ten percent is the default for most lists and 50% remains the maximum. Bigger or older lists should use a lower participant-selected rate; exact bands still need validation.',
+    source: { kind: 'method-owner-feedback', author: 'Sigrun', date: '2026-08-16' },
     kind: 'benchmark',
   },
 ] as const satisfies readonly KnowledgeCard[]

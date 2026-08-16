@@ -16,7 +16,7 @@ The prototype:
 - calculates the funnel deterministically;
 - selects strategy from source-mapped Launch & Sell knowledge cards;
 - records whether guidance comes from the July 2025 outline or Sigrun’s dated feedback;
-- labels the remaining sales-rate denominator question explicitly.
+- applies the 1–3% sales rate to all workshop signups, as confirmed by Sigrun.
 
 Use synthetic or anonymized values only. Refreshing the browser clears everything.
 
@@ -42,4 +42,5 @@ Both experiences are shipped in one build and use the same shared calculation en
 - [Product scoping plan](docs/product-scoping-plan.md)
 - [Prototype source map](docs/prototype/source-map.md)
 - [Phase 0 validation log](docs/prototype/validation-log.md)
+- [Five-case validation set](docs/prototype/golden-cases.md)
 - [Methodology questions to confirm](docs/prototype/open-questions.md)

@@ -58,10 +58,13 @@ export function EmailReachFields({
       <div className="email-reach-intro">
         <strong>Start with the audience you can email.</strong>
         <p>
-          Sigrun notes that signup percentages tend to fall as lists get larger. A 50,000-person
-          list produced 2,000 registrations, or 4%. This prototype leaves the rate in your hands.
+          Ten percent is the starting point for most lists. Use a lower rate for a bigger or older
+          list. A 50,000-person list produced 2,000 registrations, or 4%.
         </p>
-        <SourceChip sourceId="SIGRUN-REACH-2026-08-11" />
+        <div className="source-list">
+          <SourceChip sourceId="SIGRUN-REACH-2026-08-11" />
+          <SourceChip sourceId="SIGRUN-REACH-2026-08-16" />
+        </div>
       </div>
 
       <div className="form-grid form-grid--2">
@@ -102,7 +105,8 @@ export function EmailReachFields({
             <span>Sigrun default · {ORGANIC_SIGNUP_RATE_DEFAULT}%</span>
           </div>
           <p className="field-hint" id="beginner-organic-signup-rate-hint">
-            Adjust the visible 10% starting point using your own evidence. Maximum 50%.
+            Lower the 10% starting point for a bigger or older list using your own evidence.
+            Maximum 50%.
           </p>
           <div className="number-control">
             <input

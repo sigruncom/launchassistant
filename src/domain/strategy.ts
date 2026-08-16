@@ -76,9 +76,7 @@ export const composeStrategy = (
   ]
 
   const nextMoves: Recommendation[] = []
-  const coachDecisions: string[] = [
-    'Confirm whether the 1–3% sales conversion applies to all workshop registrations or only live attendees.',
-  ]
+  const coachDecisions: string[] = []
 
   if (
     inputs.workshopDurationDays === 1 &&
@@ -202,7 +200,7 @@ export const composeStrategy = (
 
   return {
     headline: `${workshopFormat} leading into ${recommendedOffer.toLowerCase()}`,
-    summary: `At ${selected.conversionRatePercent}% conversion, the revenue goal requires ${selected.buyersRequired.toLocaleString()} buyers and ${selected.registrationsRequired.toLocaleString()} workshop registrations.`,
+    summary: `At ${selected.conversionRatePercent}% workshop-signup-to-sale conversion, the revenue goal requires ${selected.buyersRequired.toLocaleString()} buyers and ${selected.registrationsRequired.toLocaleString()} workshop registrations.`,
     workshopFormat,
     recommendedOffer,
     recommendations,

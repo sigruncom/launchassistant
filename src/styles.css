@@ -667,6 +667,10 @@ button:disabled {
   margin-top: 3px;
 }
 
+.email-reach-intro .source-list {
+  margin-top: 3px;
+}
+
 .email-reach-label {
   display: flex;
   align-items: center;
@@ -1190,6 +1194,10 @@ button:disabled {
   color: var(--muted);
   font-size: 10px;
   line-height: 1.5;
+}
+
+.source-note .source-list {
+  margin-top: 0;
 }
 
 .source-chip {

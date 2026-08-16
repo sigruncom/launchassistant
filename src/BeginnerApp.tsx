@@ -323,6 +323,7 @@ function BeginnerApp() {
                     { value: 2, label: '2% · Planning' },
                     { value: 3, label: '3% · Benchmark' },
                   ]}
+                  hint="Applied to all workshop signups, whether or not they attend live."
                 />
                 <DraftNumberField
                   id="beginner-group-join-rate"

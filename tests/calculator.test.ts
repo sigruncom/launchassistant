@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   CALCULATOR_VERSION,
+  SALES_CONVERSION_BASIS,
   calculateLaunch,
   calculateReviewMetrics,
   ceilDivide,
@@ -12,7 +13,9 @@ describe('launch calculator', () => {
     const result = calculateLaunch(demoInputs)
 
     expect(result.calculatorVersion).toBe(CALCULATOR_VERSION)
-    expect(result.calculatorVersion).toBe('prototype-0.3.0')
+    expect(result.calculatorVersion).toBe('prototype-0.3.1')
+    expect(result.salesConversionBasis).toBe(SALES_CONVERSION_BASIS)
+    expect(result.salesConversionBasis).toBe('all-workshop-signups')
     expect(result.selected.conversionRatePercent).toBe(2)
     expect(result.selected.buyersRequired).toBe(13)
     expect(result.selected.registrationsRequired).toBe(650)
@@ -26,6 +29,13 @@ describe('launch calculator', () => {
     expect(result.selected.projectedBuyers).toBe(8)
     expect(result.selected.projectedRevenueCents).toBe(797_600)
     expect(result.selected.registrationGapAfterBudget).toBe(220)
+    expect(
+      result.selected.trace.find((item) => item.id === 'FORMULA-REGISTRATIONS-001'),
+    ).toMatchObject({
+      label: 'Required workshop signups',
+      expression: 'ceil(13 / 2%)',
+      result: 650,
+    })
   })
 
   it('compares only the source-backed 1%, 2%, and 3% scenarios', () => {
@@ -54,7 +64,7 @@ describe('launch calculator', () => {
     expect(result.selected.attendeesExpected).toBe(attendees)
   })
 
-  it('does not reinterpret show-up rate as the sales-conversion denominator', () => {
+  it('uses all workshop signups as the sales-conversion base', () => {
     const low = calculateLaunch({ ...demoInputs, showUpRatePercent: 10 }).selected
     const high = calculateLaunch({ ...demoInputs, showUpRatePercent: 70 }).selected
 
@@ -62,6 +72,12 @@ describe('launch calculator', () => {
     expect(high.registrationsRequired).toBe(low.registrationsRequired)
     expect(high.projectedRevenueCents).toBe(low.projectedRevenueCents)
     expect(high.attendeesExpected).toBeGreaterThan(low.attendeesExpected)
+    expect(low.projectedBuyers).toBe(
+      Math.floor(low.projectedRegistrations * (low.conversionRatePercent / 100)),
+    )
+    expect(low.projectedBuyers).not.toBe(
+      Math.floor(low.projectedAttendeesExpected * (low.conversionRatePercent / 100)),
+    )
   })
 
   it('allows a participant rate above the recorded high without exceeding 100%', () => {

@@ -26,9 +26,9 @@
 - These are guidance signals, not an automatic override of the participant’s selected format.
 - This dated participant-choice guidance supersedes the outline’s earlier automatic one-day eligibility rule.
 
-### Remaining clarification
+### Clarification later resolved
 
-- Confirm whether the 1–3% sales conversion is measured from all workshop registrations or only live attendees. The calculator keeps the existing registration-to-sale treatment until Sigrun answers.
+- The 1–3% sales-conversion base was still open at this review. Sigrun resolved it on 2026-08-16: conversion applies to all workshop signups.
 
 ## 2026-08-11 — Sigrun email-reach correction
 
@@ -51,3 +51,32 @@
 ### Remaining clarification
 
 - Confirm the authoritative whole-person rounding rule and whether list-size bands should suggest lower starting rates.
+
+## 2026-08-16 — Conversion, reach, flow and lifecycle confirmation
+
+**Source:** Slack DM channel `D03F510JB`, Launch Assistant thread `1786272628.614009`, reply from Sigrun at timestamp `1786895999.683269`.
+
+### Method decisions
+
+- The 1–3% sales conversion always applies to all workshop signups, not only live attendees.
+- Ten percent is the default organic signup rate for most email lists.
+- The hard ceiling remains 50%.
+- Bigger or older lists should use a lower expected signup rate.
+- No list-size thresholds, list-age definitions or suggested lower rates were supplied, so the prototype keeps the rate participant-selected and does not infer a curve.
+
+### UX and validation decisions
+
+- The remaining Beginner flow was approved as presented.
+- Sigrun approved starting the proposed five-category historical validation pass.
+- No historical case inputs, source links or approved expected outputs were included in the reply. The pass therefore remains at zero executable cases and the Phase 0 gate has not passed.
+
+### Membership data policy
+
+- Phase 1 may save plans and allow export while Advantage membership is active.
+- Membership exit ends access and triggers deletion; there is no post-membership export or archive.
+- The disposable Phase 0 prototype remains browser-memory-only and does not persist participant inputs.
+
+### Inputs still required
+
+- Five historical launches with original calculator inputs and Sigrun-approved outputs, recommendation, red flags and any coach override.
+- Exact guidance for what counts as a bigger or older list and which lower rates should be suggested.

@@ -30,7 +30,18 @@ describe('knowledge provenance', () => {
       'SIGRUN-WORKSHOP-2026-08-09',
       'SIGRUN-FORMULAS-2026-08-09',
       'SIGRUN-REACH-2026-08-11',
+      'SIGRUN-CONVERSION-2026-08-16',
+      'SIGRUN-REACH-2026-08-16',
     ])
+  })
+
+  it('records the resolved conversion base without inventing reach bands', () => {
+    expect(knowledgeById['SIGRUN-CONVERSION-2026-08-16'].guidance).toContain(
+      'all workshop signups',
+    )
+    expect(knowledgeById['SIGRUN-REACH-2026-08-16'].guidance).toContain(
+      'exact bands still need validation',
+    )
   })
 
   it('ensures every displayed recommendation cites a real knowledge card', () => {

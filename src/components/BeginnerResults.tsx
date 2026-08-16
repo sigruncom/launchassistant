@@ -123,7 +123,7 @@ export function BeginnerResults({
           <h2>{selected.buyersRequired.toLocaleString()} buyers</h2>
           <p>
             To reach {money.format(inputs.revenueGoal)} at {money.format(inputs.price)} per buyer,
-            use {selected.conversionRatePercent}% as the working planning case.
+            use a {selected.conversionRatePercent}% workshop-signup-to-sale planning case.
           </p>
         </div>
         <div className="beginner-target__metrics">
@@ -196,16 +196,17 @@ export function BeginnerResults({
           </p>
           <div className="source-list">
             <SourceChip sourceId="LS-FUNNEL-001" />
+            <SourceChip sourceId="SIGRUN-CONVERSION-2026-08-16" />
             <SourceChip sourceId="LS-ATTENDANCE-001" />
             <SourceChip sourceId="SIGRUN-ATTENDANCE-2026-08-09" />
             <SourceChip sourceId="SIGRUN-WORKSHOP-2026-08-09" />
             <SourceChip sourceId="SIGRUN-REACH-2026-08-11" />
+            <SourceChip sourceId="SIGRUN-REACH-2026-08-16" />
             <SourceChip sourceId="LS-ADS-001" />
           </div>
           <p>
-            These are planning estimates. Sigrun approved the prototype formulas; one point still
-            needs clarification: whether the 1–3% sales rate applies to all registrations or only
-            live attendees.
+            These are planning estimates. Sigrun approved the prototype formulas and confirmed
+            that the 1–3% sales rate applies to all workshop signups, not only live attendees.
           </p>
         </div>
       </details>

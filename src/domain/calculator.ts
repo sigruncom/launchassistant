@@ -1,6 +1,7 @@
 import { launchInputSchema, type LaunchInputs } from './schema'
 
-export const CALCULATOR_VERSION = 'prototype-0.3.0'
+export const CALCULATOR_VERSION = 'prototype-0.3.1'
+export const SALES_CONVERSION_BASIS = 'all-workshop-signups' as const
 
 export type ScenarioKey = 'cautious' | 'planning' | 'benchmark'
 
@@ -33,6 +34,7 @@ export type LaunchScenario = {
 
 export type LaunchCalculation = {
   calculatorVersion: string
+  salesConversionBasis: typeof SALES_CONVERSION_BASIS
   goalCents: number
   priceCents: number
   costPerLeadCents: number
@@ -123,7 +125,7 @@ export const calculateLaunch = (rawInputs: LaunchInputs): LaunchCalculation => {
         },
         {
           id: 'FORMULA-REGISTRATIONS-001',
-          label: 'Required registrations',
+          label: 'Required workshop signups',
           expression: `ceil(${buyersRequired} / ${scenario.conversionRatePercent}%)`,
           result: registrationsRequired,
           source: 'derived',
@@ -156,6 +158,7 @@ export const calculateLaunch = (rawInputs: LaunchInputs): LaunchCalculation => {
 
   return {
     calculatorVersion: CALCULATOR_VERSION,
+    salesConversionBasis: SALES_CONVERSION_BASIS,
     goalCents,
     priceCents,
     costPerLeadCents,

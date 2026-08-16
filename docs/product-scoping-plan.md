@@ -77,6 +77,8 @@ Standalone subscriptions, licences for other coaching teams, and white-label edi
 | **3. Connect** | Somba data improves planning and execution | Selected CRM/launch metrics, API connection, lifecycle events, and limited status write-back | Data integration reduces work or improves outcomes enough to justify maintenance |
 | **4. Productize** | An optional external software business | Billing, multi-brand support, external coach licences, white-labeling, anonymized benchmarks | Pursued only if Sigrun later chooses to expand access beyond Advantage |
 
+Sigrun approved starting the five-category historical validation pass in Slack reply `1786895999.683269` on 2026-08-16. No case data or expected outputs were supplied, so the immediate Phase 0 task is to collect and run those five cases before expanding toward the 10–20 reconstructed-launch set.
+
 An indicative path for a small experienced team is 1–2 weeks for Phase 0, 4–8 weeks for the Phase 1 product, and a 2–4 week controlled pilot. This should be re-estimated after the formula and workflow audit.
 
 ## 5. Phase 1 product scope
@@ -251,6 +253,8 @@ Do not use email as the only external identity key. HighLevel can permit multipl
 This creates one additional authentication step the first time a participant enters the Launch Planner, but it avoids a fragile pseudo-SSO based on query parameters or email. After the initial login, a normal persistent session makes return visits low-friction.
 
 ### Confirmed membership policy
+
+Sigrun reconfirmed in Slack reply `1786895999.683269` on 2026-08-16 that saving and export are available while Advantage membership is active, then access ends and the participant data is deleted when membership ends.
 
 - **Eligible participants:** active Advantage members only. Other Sigrun program participants are ineligible.
 - **Membership model:** continuous membership; there are no cohorts.

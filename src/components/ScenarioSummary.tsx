@@ -18,6 +18,7 @@ type ScenarioSummaryProps = {
 export function ScenarioSummary({ inputs, calculation }: ScenarioSummaryProps) {
   const selected = calculation.selected
   const money = formatter(inputs.currency)
+  const versionLabel = calculation.calculatorVersion.replace('prototype-', 'v')
   const largestRegistrationTarget = Math.max(
     ...calculation.scenarios.map((scenario) => scenario.registrationsRequired),
   )
@@ -26,14 +27,14 @@ export function ScenarioSummary({ inputs, calculation }: ScenarioSummaryProps) {
     <aside className="calculation-panel" aria-label="Live launch calculation">
       <div className="panel-eyebrow">
         <span>Live calculation</span>
-        <span className="version-badge">v0.2</span>
+        <span className="version-badge">{versionLabel}</span>
       </div>
 
       <p className="equation-intro">To reach</p>
       <h2>{money.format(inputs.revenueGoal)}</h2>
       <p className="equation-copy">
         plan for <strong>{selected.registrationsRequired.toLocaleString()} registrations</strong>{' '}
-        at {selected.conversionRatePercent}% conversion.
+        at {selected.conversionRatePercent}% of all workshop signups converting to buyers.
       </p>
 
       <div className="red-thread" aria-label="Revenue to registration calculation">
@@ -112,10 +113,13 @@ export function ScenarioSummary({ inputs, calculation }: ScenarioSummaryProps) {
       </div>
 
       <div className="source-note">
-        <SourceChip sourceId="SIGRUN-FORMULAS-2026-08-09" />
+        <div className="source-list">
+          <SourceChip sourceId="SIGRUN-FORMULAS-2026-08-09" />
+          <SourceChip sourceId="SIGRUN-CONVERSION-2026-08-16" />
+        </div>
         <p>
-          Sigrun approved the prototype formulas. The sales-rate denominator still needs one
-          clarification.
+          Sigrun approved the prototype formulas and confirmed that sales conversion applies to
+          all workshop signups, independent of live attendance.
         </p>
       </div>
     </aside>

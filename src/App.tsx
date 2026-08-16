@@ -311,7 +311,7 @@ function App() {
                     { value: 2, label: '2% · Planning', detail: 'Working case' },
                     { value: 3, label: '3% · Benchmark', detail: 'Stated average' },
                   ]}
-                  hint="The outline says 1–2% is possible and describes 3% as average."
+                  hint="Applied to all workshop signups, whether or not they attend live. The outline says 1–2% is possible and describes 3% as average."
                 />
                 <DraftNumberField
                   id="group-join-rate"
