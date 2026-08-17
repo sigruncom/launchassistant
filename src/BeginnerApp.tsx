@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { BeginnerResults } from './components/BeginnerResults'
 import { EmailReachFields } from './components/EmailReachFields'
+import { CurrencySelect } from './components/CurrencySelect'
 import {
   ChoiceGroup,
   DraftNumberField,
@@ -14,6 +15,7 @@ import {
   beginnerAnswerSchema,
   beginnerAttendanceSchema,
   beginnerBlank,
+  beginnerGoalFallbackErrors,
   beginnerGoalSchema,
   beginnerReachSchema,
   beginnerSalesSchema,
@@ -24,7 +26,6 @@ import {
   type BeginnerResearch,
   type BeginnerYesNo,
 } from './domain/beginner'
-import { offerEconomicsErrors } from './domain/offerEconomics'
 import { composeStrategy } from './domain/strategy'
 import { useOfferEconomics } from './hooks/useOfferEconomics'
 
@@ -52,7 +53,10 @@ function BeginnerApp() {
   const errorSummaryRef = useRef<HTMLDivElement>(null)
   const stepHeadingRef = useRef<HTMLHeadingElement>(null)
   const resultMainRef = useRef<HTMLElement>(null)
-  const economics = useOfferEconomics({ price: '', spotsToSell: '', revenueGoal: '' })
+  const economics = useOfferEconomics(
+    { price: '', spotsToSell: '', revenueGoal: '' },
+    draft.currency,
+  )
 
   const resolvedDraft = useMemo(
     () => (economics.result?.success ? { ...draft, ...economics.result.values } : null),
@@ -143,10 +147,7 @@ function BeginnerApp() {
     ? [
         ...new Set(
           activeStep === 0 && !currentValidation
-            ? [
-                ...(draft.currency ? [] : ['Choose a currency.']),
-                ...offerEconomicsErrors(economics.result),
-              ]
+            ? beginnerGoalFallbackErrors(draft.currency, economics.result)
             : currentValidation && !currentValidation.success
               ? currentValidation.error.issues.map((issue) => issue.message)
               : [],
@@ -209,22 +210,12 @@ function BeginnerApp() {
 
             {activeStep === 0 ? (
               <div className="form-stack">
-                <div className="field beginner-currency-field">
-                  <label htmlFor="beginner-currency">Currency</label>
-                  <select
-                    id="beginner-currency"
-                    className="select-input"
-                    value={draft.currency}
-                    onChange={(event) =>
-                      update('currency', event.target.value as BeginnerDraft['currency'])
-                    }
-                  >
-                    <option value="">Choose currency</option>
-                    <option value="EUR">EUR · €</option>
-                    <option value="USD">USD · $</option>
-                    <option value="GBP">GBP · £</option>
-                  </select>
-                </div>
+                <CurrencySelect
+                  className="beginner-currency-field"
+                  id="beginner-currency"
+                  value={draft.currency}
+                  onChange={(value) => update('currency', value)}
+                />
 
                 <OfferEconomicsFields
                   calculatedField={economics.calculatedField}

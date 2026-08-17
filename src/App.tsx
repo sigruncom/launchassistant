@@ -4,11 +4,17 @@ import {
   DraftNumberField,
   ShowUpRateField,
 } from './components/Fields'
+import { CurrencySelect } from './components/CurrencySelect'
 import { OfferEconomicsFields } from './components/OfferEconomicsFields'
 import { StepProgress } from './components/StepProgress'
 import { StrategyView } from './components/StrategyView'
 import { VariantNavigation } from './components/VariantNavigation'
 import { calculateLaunch } from './domain/calculator'
+import {
+  currencyAmountLabel,
+  currencyMinorUnitScale,
+  currencyPrefix,
+} from './domain/currency'
 import {
   completeBlank,
   completeStepErrors,
@@ -18,7 +24,7 @@ import {
   type YesNoAnswer,
 } from './domain/complete'
 import { composeStrategy } from './domain/strategy'
-import type { LaunchInputs } from './domain/schema'
+import { offerEconomicsLimits } from './domain/offerEconomics'
 import { useOfferEconomics } from './hooks/useOfferEconomics'
 
 const steps = [
@@ -35,12 +41,6 @@ const steps = [
 
 type StepIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 
-const currencySymbol: Record<LaunchInputs['currency'], string> = {
-  EUR: '€',
-  USD: '$',
-  GBP: '£',
-}
-
 function App() {
   const [draft, setDraft] = useState<CompleteDraft>(completeBlank)
   const [activeStep, setActiveStep] = useState<StepIndex>(0)
@@ -49,7 +49,10 @@ function App() {
   const errorSummaryRef = useRef<HTMLDivElement>(null)
   const stepHeadingRef = useRef<HTMLHeadingElement>(null)
   const resultMainRef = useRef<HTMLElement>(null)
-  const economics = useOfferEconomics({ price: '', spotsToSell: '', revenueGoal: '' })
+  const economics = useOfferEconomics(
+    { price: '', spotsToSell: '', revenueGoal: '' },
+    draft.currency,
+  )
 
   const validation = useMemo(
     () => parseCompleteDraft(draft, economics.result),
@@ -115,7 +118,8 @@ function App() {
     focusStepHeading(0)
   }
 
-  const moneyPrefix = draft.currency ? currencySymbol[draft.currency] : undefined
+  const moneyPrefix = currencyPrefix(draft.currency)
+  const moneyStep = 1 / currencyMinorUnitScale(draft.currency)
 
   return (
     <div className="app-shell">
@@ -198,22 +202,12 @@ function App() {
 
             {activeStep === 1 ? (
               <div className="form-stack">
-                <div className="field economics-currency-field">
-                  <label htmlFor="currency">Currency</label>
-                  <select
-                    id="currency"
-                    className="select-input"
-                    value={draft.currency}
-                    onChange={(event) =>
-                      update('currency', event.target.value as CompleteDraft['currency'])
-                    }
-                  >
-                    <option value="">Choose currency</option>
-                    <option value="EUR">EUR · €</option>
-                    <option value="USD">USD · $</option>
-                    <option value="GBP">GBP · £</option>
-                  </select>
-                </div>
+                <CurrencySelect
+                  className="economics-currency-field"
+                  id="currency"
+                  value={draft.currency}
+                  onChange={(value) => update('currency', value)}
+                />
                 <OfferEconomicsFields
                   calculatedField={economics.calculatedField}
                   currency={draft.currency || undefined}
@@ -344,22 +338,22 @@ function App() {
                   <div className="form-grid form-grid--2">
                     <DraftNumberField
                       id="cost-per-lead"
-                      label="Cost per paid registration"
+                      label={currencyAmountLabel('Cost per paid registration', draft.currency)}
                       hint="Use your own evidence; no authoritative default is defined."
                       prefix={moneyPrefix}
                       placeholder="Enter cost"
-                      step={0.01}
-                      max={100_000}
+                      step={moneyStep}
+                      max={offerEconomicsLimits.price}
                       value={draft.costPerLead}
                       onChange={(value) => update('costPerLead', value)}
                     />
                     <DraftNumberField
                       id="ad-budget"
-                      label="Available ad budget"
+                      label={currencyAmountLabel('Available ad budget', draft.currency)}
                       prefix={moneyPrefix}
                       placeholder="Enter budget"
-                      step={0.01}
-                      max={100_000_000}
+                      step={moneyStep}
+                      max={offerEconomicsLimits.revenueGoal}
                       value={draft.adBudget}
                       onChange={(value) => update('adBudget', value)}
                     />

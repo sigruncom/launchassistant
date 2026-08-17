@@ -80,3 +80,21 @@
 
 - Five historical launches with original calculator inputs and Sigrun-approved outputs, recommendation, red flags and any coach override.
 - Exact guidance for what counts as a bigger or older list and which lower rates should be suggested.
+
+## 2026-08-16 — Global currency coverage
+
+**Source:** Slack DM channel `D03F510JB`, Launch Assistant thread `1786272628.614009`, reply from Sigrun at timestamp `1786916169.808439`.
+
+### Product decision
+
+- Advantage serves participants across roughly 70 countries.
+- Keep EUR and the euro symbol available.
+- Add broader currency support rather than removing the currency choice.
+
+### Prototype treatment
+
+- EUR remains the first option in a compact common-currency selector. “More currencies” progressively reveals a versioned international ISO-currency catalogue.
+- The initial static catalogue is `iso-4217-list-one-v1-2026-08-17` (92 participant-facing codes), checked against the official [SIX ISO 4217 current and historical lists](https://www.six-group.com/en/products-services/financial-information/market-reference-data/data-standards.html) on 2026-08-17. It is stored in source control so accepted inputs do not vary by browser data; historical BGN, fund codes and metals are excluded.
+- The common-currency shortcuts are a provisional UX choice until Advantage usage data defines the best ordering.
+- One currency labels every amount in a plan. Changing it never converts price, revenue, ad-budget or cost inputs; calculated amounts round only to the selected currency’s official smallest unit.
+- Euro-only methodology thresholds remain limited to EUR. Other currencies continue to route those decisions to coach review.

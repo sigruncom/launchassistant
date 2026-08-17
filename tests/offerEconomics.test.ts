@@ -15,6 +15,7 @@ import { demoInputs } from '../src/domain/schema'
 const calculate = (
   calculatedField: OfferEconomicsField,
   overrides: Partial<OfferEconomicsDraft> = {},
+  currency: 'EUR' | 'JPY' | 'KWD' | 'VND' = 'EUR',
 ) =>
   calculateOfferEconomics(
     {
@@ -24,6 +25,7 @@ const calculate = (
       ...overrides,
     },
     calculatedField,
+    currency,
   )
 
 const expectSuccess = (result: ReturnType<typeof calculateOfferEconomics>) => {
@@ -50,23 +52,23 @@ describe('offer economics cross-calculator', () => {
       spotsToSell: '13',
       revenueGoal: '12000',
     })
-    expect(result.exact.impliedRevenueCents).toBe(1_296_100n)
-    expect(result.exact.overGoalCents).toBe(96_100n)
+    expect(result.exact.impliedRevenueMinorUnits).toBe(1_296_100n)
+    expect(result.exact.overGoalMinorUnits).toBe(96_100n)
   })
 
   it('calculates revenue exactly from price and client spots', () => {
     const result = expectSuccess(calculate('revenueGoal'))
 
     expect(result.values.revenueGoal).toBe('12961')
-    expect(result.exact.overGoalCents).toBe(0n)
+    expect(result.exact.overGoalMinorUnits).toBe(0n)
   })
 
-  it('rounds a calculated price upward to the nearest cent', () => {
+  it('rounds a calculated EUR price upward to the nearest minor unit', () => {
     const result = expectSuccess(calculate('price'))
 
     expect(result.values.price).toBe('923.08')
-    expect(result.exact.impliedRevenueCents).toBe(1_200_004n)
-    expect(result.exact.overGoalCents).toBe(4n)
+    expect(result.exact.impliedRevenueMinorUnits).toBe(1_200_004n)
+    expect(result.exact.overGoalMinorUnits).toBe(4n)
   })
 
   it('keeps decimal multiplication exact', () => {
@@ -75,7 +77,7 @@ describe('offer economics cross-calculator', () => {
     )
 
     expect(result.values.revenueGoal).toBe('0.30')
-    expect(result.exact.impliedRevenueCents).toBe(30n)
+    expect(result.exact.impliedRevenueMinorUnits).toBe(30n)
   })
 
   it('reports no overage for exact division', () => {
@@ -84,14 +86,14 @@ describe('offer economics cross-calculator', () => {
     )
 
     expect(result.values.spotsToSell).toBe('12')
-    expect(result.exact.overGoalCents).toBe(0n)
+    expect(result.exact.overGoalMinorUnits).toBe(0n)
   })
 
   it.each([
     ['blank price', 'spotsToSell', { price: '' }],
     ['zero price', 'spotsToSell', { price: '0' }],
     ['negative price', 'spotsToSell', { price: '-1' }],
-    ['fractional cent', 'spotsToSell', { price: '12.345' }],
+    ['over-precise EUR amount', 'spotsToSell', { price: '12.345' }],
     ['exponent notation', 'spotsToSell', { price: '1e3' }],
     ['fractional spots', 'revenueGoal', { spotsToSell: '2.5' }],
     ['zero spots', 'revenueGoal', { spotsToSell: '0' }],
@@ -101,24 +103,61 @@ describe('offer economics cross-calculator', () => {
 
   it('rejects derived values outside prototype limits', () => {
     expect(
-      calculate('revenueGoal', { price: '1000000', spotsToSell: '101' }).success,
+      calculate('revenueGoal', { price: '1000000000000', spotsToSell: '2' }).success,
     ).toBe(false)
     expect(
-      calculate('spotsToSell', { price: '0.01', revenueGoal: '100000000' }).success,
+      calculate('spotsToSell', { price: '0.01', revenueGoal: '1000000000000' }).success,
     ).toBe(false)
     expect(
       calculate('spotsToSell', {
-        price: '999999.99',
-        revenueGoal: '100000000',
+        price: '999999999999.99',
+        revenueGoal: '1000000000000',
       }).success,
     ).toBe(false)
   })
 
-  it('rejects a client target that whole-cent pricing cannot represent', () => {
+  it('rejects a client target that the currency minor unit cannot represent', () => {
     const result = calculate('price', { revenueGoal: '0.01', spotsToSell: '100' })
 
     expect(result.success).toBe(false)
-    expect(result.errors.spotsToSell).toContain('whole-cent prices')
+    expect(result.errors.spotsToSell).toContain('smallest currency unit')
+  })
+
+  it('rounds calculated JPY prices to whole currency units', () => {
+    const result = expectSuccess(
+      calculate('price', { revenueGoal: '12000', spotsToSell: '13' }, 'JPY'),
+    )
+
+    expect(result.values.price).toBe('924')
+    expect(result.exact.priceMinorUnits).toBe(924n)
+    expect(result.exact.overGoalMinorUnits).toBe(12n)
+    expect(calculate('spotsToSell', { price: '997.5' }, 'JPY').success).toBe(false)
+  })
+
+  it('rounds calculated KWD prices to three decimal places', () => {
+    const result = expectSuccess(
+      calculate('price', { revenueGoal: '12000', spotsToSell: '13' }, 'KWD'),
+    )
+
+    expect(result.values.price).toBe('923.077')
+    expect(result.exact.priceMinorUnits).toBe(923_077n)
+    expect(result.exact.overGoalMinorUnits).toBe(1n)
+    expect(
+      calculate('spotsToSell', { price: '923.0777' }, 'KWD').success,
+    ).toBe(false)
+  })
+
+  it('supports high-denomination VND offer values', () => {
+    const result = expectSuccess(
+      calculate(
+        'spotsToSell',
+        { price: '25000000', revenueGoal: '300000000' },
+        'VND',
+      ),
+    )
+
+    expect(result.values.spotsToSell).toBe('12')
+    expect(result.exact.impliedRevenueMinorUnits).toBe(300_000_000n)
   })
 
   it('supports deterministic switching between calculated fields', () => {
@@ -302,6 +341,16 @@ describe('fluid offer economics editor', () => {
     resolved = expectEditorSuccess(editor)
     expect(resolved.calculatedField).toBe('spotsToSell')
     expect(resolved.values.spotsToSell).toBe('16')
+  })
+
+  it('recalculates the derived field when the selected currency unit changes', () => {
+    let editor = createOfferEconomicsEditor(blankDraft)
+    editor = editOfferEconomics(editor, 'revenueGoal', '12000')
+    editor = editOfferEconomics(editor, 'spotsToSell', '13')
+
+    expect(expectEditorSuccess(editor).values.price).toBe('923.08')
+    expect(resolveOfferEconomicsEditor(editor, 'JPY').values.price).toBe('924')
+    expect(resolveOfferEconomicsEditor(editor, 'KWD').values.price).toBe('923.077')
   })
 
   it('is deterministic and does not mutate editor state', () => {

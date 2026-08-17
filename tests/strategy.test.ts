@@ -94,17 +94,37 @@ describe('document-only strategy composer', () => {
     )
   })
 
+  it('keeps the euro-only price guideline out of a newly supported currency', () => {
+    const strategy = strategyFor({ currency: 'JPY', price: 250, revenueGoal: 3_000 })
+
+    expect(strategy.coachDecisions).toContain(
+      'The source gives the workshop-economics threshold only in euros; no conversion rule is defined for this currency.',
+    )
+  })
+
   it('uses a discovery-call CTA for high-priced euro offers', () => {
     const strategy = strategyFor({ currency: 'EUR', price: 1_500 })
 
     expect(strategy.recommendations.some((item) => item.id === 'REC-CTA')).toBe(true)
   })
 
-  it('sends non-euro price thresholds to coach review instead of converting silently', () => {
-    const strategy = strategyFor({ currency: 'USD', price: 1_500, offerType: 'group' })
+  it.each([250, 1_500])(
+    'sends the euro-only discovery-call threshold to coach review for a non-euro price of %s',
+    (price) => {
+      const strategy = strategyFor({ currency: 'USD', price, offerType: 'group' })
 
-    expect(strategy.recommendations.some((item) => item.id === 'REC-CTA')).toBe(false)
-    expect(strategy.coachDecisions).toContain(
+      expect(strategy.recommendations.some((item) => item.id === 'REC-CTA')).toBe(false)
+      expect(strategy.coachDecisions).toContain(
+        'The source defines the discovery-call price threshold only in euros; no conversion rule is defined for this currency.',
+      )
+    },
+  )
+
+  it('keeps the direct discovery-call CTA for a non-euro one-to-one offer', () => {
+    const strategy = strategyFor({ currency: 'JPY', price: 250, offerType: 'one-to-one' })
+
+    expect(strategy.recommendations.some((item) => item.id === 'REC-CTA')).toBe(true)
+    expect(strategy.coachDecisions).not.toContain(
       'The source defines the discovery-call price threshold only in euros; no conversion rule is defined for this currency.',
     )
   })

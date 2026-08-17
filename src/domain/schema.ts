@@ -1,35 +1,52 @@
 import { z } from 'zod'
 import {
-  hasSupportedCentPrecision,
+  hasSupportedCurrencyPrecision,
   offerEconomicsLimits,
 } from './offerEconomics'
+import {
+  currencyMinorUnitDigits,
+  currencyValues,
+  normalizeCurrencyCode,
+  type CurrencyCode,
+} from './currency'
 
-export const currencyValues = ['EUR', 'USD', 'GBP'] as const
 export const offerTypeValues = ['one-to-one', 'group', 'course', 'undecided'] as const
 export const audienceContextValues = ['b2b', 'hobby', 'other'] as const
 export const workshopDurationValues = [1, 3] as const
 export const conversionValues = [1, 2, 3] as const
 
+export const currencySchema = z.preprocess(
+  (value) => typeof value === 'string' ? normalizeCurrencyCode(value) : value,
+  z.enum(currencyValues, { error: 'Choose a currency from the international list.' }),
+)
+
+export const monetaryInputLimit = offerEconomicsLimits.revenueGoal
+
+const currencyPrecisionMessage = (label: string, currency: CurrencyCode) => {
+  const digits = currencyMinorUnitDigits(currency)
+  return digits === 0
+    ? `${label} must be a whole amount in ${currency}.`
+    : `${label} can have no more than ${digits} decimal places in ${currency}.`
+}
+
 export const launchInputSchema = z
   .object({
     offerName: z.string().trim().min(1).max(80),
     offerType: z.enum(offerTypeValues),
-    currency: z.enum(currencyValues),
+    currency: currencySchema,
     price: z
       .number()
       .finite()
-      .min(0.01)
-      .max(offerEconomicsLimits.price)
-      .refine(hasSupportedCentPrecision, 'Price can have no more than two decimal places.'),
+      .positive()
+      .max(offerEconomicsLimits.price),
     revenueGoal: z
       .number()
       .finite()
-      .min(0.01)
-      .max(offerEconomicsLimits.revenueGoal)
-      .refine(hasSupportedCentPrecision, 'Revenue goal can have no more than two decimal places.'),
+      .positive()
+      .max(offerEconomicsLimits.revenueGoal),
     organicRegistrations: z.number().int().nonnegative().max(100_000_000),
-    costPerLead: z.number().finite().nonnegative().max(100_000),
-    adBudget: z.number().finite().nonnegative().max(100_000_000),
+    costPerLead: z.number().finite().nonnegative().max(monetaryInputLimit),
+    adBudget: z.number().finite().nonnegative().max(monetaryInputLimit),
     audienceContext: z.enum(audienceContextValues),
     workshopDurationDays: z.union([
       z.literal(workshopDurationValues[0]),
@@ -49,6 +66,23 @@ export const launchInputSchema = z
     groupJoinRatePercent: z.number().finite().min(1).max(100),
   })
   .superRefine((value, context) => {
+    const precisionFields = [
+      ['price', 'Price'],
+      ['revenueGoal', 'Revenue goal'],
+      ['costPerLead', 'Cost per paid registration'],
+      ['adBudget', 'Ad budget'],
+    ] as const
+
+    for (const [field, label] of precisionFields) {
+      if (!hasSupportedCurrencyPrecision(value[field], value.currency)) {
+        context.addIssue({
+          code: 'custom',
+          path: [field],
+          message: currencyPrecisionMessage(label, value.currency),
+        })
+      }
+    }
+
     if (value.adBudget > 0 && value.costPerLead <= 0) {
       context.addIssue({
         code: 'custom',

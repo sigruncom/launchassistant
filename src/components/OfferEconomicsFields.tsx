@@ -1,27 +1,19 @@
 import { useState } from 'react'
-import type { LaunchInputs } from '../domain/schema'
+import {
+  currencyMinorUnitDigits,
+  currencyMinorUnitScale,
+  currencyPrefix,
+  isSupportedCurrencyCode,
+  moneyFormatter,
+  normalizeCurrencyCode,
+  type CurrencyCode,
+} from '../domain/currency'
 import {
   offerEconomicsLimits,
   type OfferEconomicsDraft,
   type OfferEconomicsField,
   type OfferEconomicsResult,
 } from '../domain/offerEconomics'
-
-const currencySymbol: Record<LaunchInputs['currency'], string> = {
-  EUR: '€',
-  USD: '$',
-  GBP: '£',
-}
-
-const moneyFormatter = (currency?: LaunchInputs['currency']) =>
-  currency
-    ? new Intl.NumberFormat('en', {
-        style: 'currency',
-        currency,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      })
-    : new Intl.NumberFormat('en', { maximumFractionDigits: 2 })
 
 const fieldDetails: Record<
   OfferEconomicsField,
@@ -55,6 +47,8 @@ type EconomicsNumberFieldProps = {
   id: string
   label: string
   prefix?: string
+  moneyMinimum: number
+  moneyStep: number
   showError: boolean
   value: string
   recalculatedLabel?: string
@@ -70,6 +64,8 @@ function EconomicsNumberField({
   id,
   label,
   prefix,
+  moneyMinimum,
+  moneyStep,
   showError,
   value,
   recalculatedLabel,
@@ -105,9 +101,9 @@ function EconomicsNumberField({
           id={id}
           type="number"
           inputMode={isMoney ? 'decimal' : 'numeric'}
-          min={isMoney ? 0.01 : 1}
+          min={isMoney ? moneyMinimum : 1}
           max={offerEconomicsLimits[field]}
-          step={isMoney ? 0.01 : 1}
+          step={isMoney ? moneyStep : 1}
           placeholder={calculated ? 'Waiting for two valid values' : fieldDetails[field].placeholder}
           value={value}
           aria-invalid={showError && Boolean(error) ? true : undefined}
@@ -127,7 +123,7 @@ function EconomicsNumberField({
 
 type OfferEconomicsFieldsProps = {
   calculatedField: OfferEconomicsField | null
-  currency?: LaunchInputs['currency']
+  currency?: string
   draft: OfferEconomicsDraft
   idPrefix: string
   result: OfferEconomicsResult | null
@@ -148,8 +144,15 @@ export function OfferEconomicsFields({
   variant,
   onChange,
 }: OfferEconomicsFieldsProps) {
+  const normalizedCurrency = normalizeCurrencyCode(currency ?? '')
+  const activeCurrency: CurrencyCode = isSupportedCurrencyCode(normalizedCurrency)
+    ? normalizedCurrency
+    : 'EUR'
+  const minorUnitDigits = currencyMinorUnitDigits(activeCurrency)
+  const minorUnitScale = currencyMinorUnitScale(activeCurrency)
+  const moneyStep = 1 / minorUnitScale
   const money = moneyFormatter(currency)
-  const symbol = currency ? currencySymbol[currency] : undefined
+  const symbol = currencyPrefix(currency)
   const exact = result?.success ? result.exact : null
   const [valueAnnouncement, setValueAnnouncement] = useState('')
   const calculatedLabel = calculatedField
@@ -192,6 +195,8 @@ export function OfferEconomicsFields({
             key={field}
             label={fieldDetails[field][variant]}
             prefix={fieldDetails[field].prefix ? symbol : undefined}
+            moneyMinimum={moneyStep}
+            moneyStep={moneyStep}
             showError={showErrors}
             value={draft[field]}
             recalculatedLabel={recalculatedLabel}
@@ -205,21 +210,22 @@ export function OfferEconomicsFields({
         <div className="economics-summary">
           <strong>
             {exact.spotsToSell.toString()} {exact.spotsToSell === 1n ? 'client' : 'clients'} at{' '}
-            {money.format(Number(exact.priceCents) / 100)} produce{' '}
-            {money.format(Number(exact.impliedRevenueCents) / 100)}.
+            {money.format(Number(exact.priceMinorUnits) / minorUnitScale)} produce{' '}
+            {money.format(Number(exact.impliedRevenueMinorUnits) / minorUnitScale)}.
           </strong>
           <span>
-            {calculatedField === 'price' && exact.overGoalCents > 0n
-              ? ` Price is rounded up to the nearest cent, putting the plan ${money.format(Number(exact.overGoalCents) / 100)} above the goal.`
-              : exact.overGoalCents > 0n
-                ? ` That is ${money.format(Number(exact.overGoalCents) / 100)} above the entered goal because client spots are whole numbers.`
+            {calculatedField === 'price' && exact.overGoalMinorUnits > 0n
+              ? ` Price is rounded up to ${activeCurrency}'s smallest currency unit${minorUnitDigits === 0 ? '' : ` (${minorUnitDigits} decimal places)`}, putting the plan ${money.format(Number(exact.overGoalMinorUnits) / minorUnitScale)} above the goal.`
+              : exact.overGoalMinorUnits > 0n
+                ? ` That is ${money.format(Number(exact.overGoalMinorUnits) / minorUnitScale)} above the entered goal because client spots are whole numbers.`
                 : ' The values match exactly.'}
           </span>
         </div>
       ) : null}
 
       <p className="economics-footnote">
-        Currency changes the label only; this prototype does not convert exchange rates.
+        Changing currency does not convert your values. Calculated amounts follow that currency’s
+        smallest unit.
       </p>
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {calculatedLabel

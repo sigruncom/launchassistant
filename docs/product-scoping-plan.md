@@ -79,6 +79,8 @@ Standalone subscriptions, licences for other coaching teams, and white-label edi
 
 Sigrun approved starting the five-category historical validation pass in Slack reply `1786895999.683269` on 2026-08-16. No case data or expected outputs were supplied, so the immediate Phase 0 task is to collect and run those five cases before expanding toward the 10–20 reconstructed-launch set.
 
+Sigrun confirmed in Slack reply `1786916169.808439` that the planner must retain EUR and support a broader international currency list for Advantage members across roughly 70 countries. Each plan uses one selected currency for all amounts. The calculator respects that currency’s smallest unit but performs no exchange-rate conversion; the source-defined €297 and €1,000 methodology rules remain EUR-only.
+
 An indicative path for a small experienced team is 1–2 weeks for Phase 0, 4–8 weeks for the Phase 1 product, and a 2–4 week controlled pilot. This should be re-estimated after the formula and workflow audit.
 
 ## 5. Phase 1 product scope

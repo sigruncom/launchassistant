@@ -70,6 +70,77 @@ describe('complete planner draft', () => {
     expect(parsed.data.groupJoinRatePercent).toBe(70)
   })
 
+  it('accepts an international currency and rejects an unsupported code on its own step', () => {
+    const parsed = parseCompleteDraft(completeDraft({ currency: 'CAD' }), economics)
+
+    expect(parsed?.success).toBe(true)
+    if (!parsed?.success) throw new Error('Expected an international complete draft.')
+    expect(parsed.data.currency).toBe('CAD')
+    expect(
+      completeStepErrors(
+        1,
+        completeDraft({ currency: 'BTC' as CompleteDraft['currency'] }),
+        economics,
+      ),
+    ).toContain(
+      'Choose a currency from the international list.',
+    )
+  })
+
+  it('validates paid-promotion amounts at the selected currency precision', () => {
+    const yenDraft = completeDraft({
+      currency: 'JPY',
+      paidPromotionPlanned: 'yes',
+      costPerLead: '10.5',
+      adBudget: '500',
+    })
+    const dinarDraft = completeDraft({
+      currency: 'KWD',
+      paidPromotionPlanned: 'yes',
+      costPerLead: '0.001',
+      adBudget: '500.001',
+    })
+
+    expect(completeStepErrors(6, yenDraft, economics)).toContain(
+      'Enter a valid cost per paid registration as a whole amount with no decimals.',
+    )
+    expect(completeStepErrors(6, dinarDraft, economics)).toEqual([])
+  })
+
+  it('parses three-decimal paid amounts without losing the currency contract', () => {
+    const dinarEconomics = calculateOfferEconomics(
+      { price: '997.001', spotsToSell: '', revenueGoal: '12000.001' },
+      'spotsToSell',
+      'KWD',
+    )
+    const parsed = parseCompleteDraft(
+      completeDraft({
+        currency: 'KWD',
+        paidPromotionPlanned: 'yes',
+        costPerLead: '0.001',
+        adBudget: '500.001',
+      }),
+      dinarEconomics,
+    )
+
+    expect(parsed?.success).toBe(true)
+    if (!parsed?.success) throw new Error('Expected a three-decimal complete draft.')
+    expect(parsed.data.currency).toBe('KWD')
+    expect(parsed.data.costPerLead).toBe(0.001)
+    expect(parsed.data.adBudget).toBe(500.001)
+  })
+
+  it('accepts safe high-denomination paid inputs at the widened nominal limit', () => {
+    const draft = completeDraft({
+      currency: 'VND',
+      paidPromotionPlanned: 'yes',
+      costPerLead: '1000000000000',
+      adBudget: '1000000000000',
+    })
+
+    expect(completeStepErrors(6, draft, economics)).toEqual([])
+  })
+
   it('treats an explicit no to paid promotion as zero spend', () => {
     const parsed = parseCompleteDraft(completeDraft(), economics)
 

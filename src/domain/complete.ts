@@ -1,6 +1,19 @@
 import type { OfferEconomicsResult } from './offerEconomics'
-import { offerEconomicsErrors } from './offerEconomics'
-import { launchInputSchema, type LaunchInputs } from './schema'
+import {
+  moneyInputError,
+  offerEconomicsErrors,
+} from './offerEconomics'
+import {
+  currencyCodeError,
+  isSupportedCurrencyCode,
+  type CurrencyCode,
+  type CurrencySelectValue,
+} from './currency'
+import {
+  launchInputSchema,
+  monetaryInputLimit,
+  type LaunchInputs,
+} from './schema'
 
 export type YesNoAnswer = 'yes' | 'no'
 export type ResearchAnswer = 'yes' | 'not-yet'
@@ -8,7 +21,7 @@ export type ResearchAnswer = 'yes' | 'not-yet'
 export type CompleteDraft = {
   offerName: string
   offerType: LaunchInputs['offerType'] | ''
-  currency: LaunchInputs['currency'] | ''
+  currency: CurrencySelectValue
   organicRegistrations: string
   audienceContext: LaunchInputs['audienceContext'] | ''
   workshopDurationDays: LaunchInputs['workshopDurationDays'] | ''
@@ -61,24 +74,6 @@ const wholeNumberError = (
   return null
 }
 
-const decimalError = (
-  value: string,
-  label: string,
-  maximum: number,
-  required = true,
-) => {
-  const trimmed = value.trim()
-  if (!trimmed) return required ? `Enter ${label}.` : null
-  if (!/^\d+(?:\.\d{1,2})?$/.test(trimmed)) {
-    return `Enter a valid ${label} with no more than two decimals.`
-  }
-  const parsed = Number(trimmed)
-  if (!Number.isFinite(parsed) || parsed < 0 || parsed > maximum) {
-    return `Enter ${label} between 0 and ${maximum.toLocaleString()}.`
-  }
-  return null
-}
-
 const percentError = (value: string, label: string, maximum: number) => {
   const trimmed = value.trim()
   if (!trimmed) return `Enter ${label}.`
@@ -96,6 +91,10 @@ export const completeStepErrors = (
   draft: CompleteDraft,
   economics: OfferEconomicsResult | null,
 ): string[] => {
+  const currency: CurrencyCode = isSupportedCurrencyCode(draft.currency)
+    ? draft.currency
+    : 'EUR'
+
   switch (step) {
     case 0:
       return compact([
@@ -104,7 +103,7 @@ export const completeStepErrors = (
       ])
     case 1:
       return compact([
-        draft.currency ? null : 'Choose a currency.',
+        currencyCodeError(draft.currency),
         ...offerEconomicsErrors(economics),
       ])
     case 2:
@@ -135,10 +134,22 @@ export const completeStepErrors = (
       return compact([
         draft.paidPromotionPlanned ? null : 'Choose whether paid promotion is planned.',
         draft.paidPromotionPlanned === 'yes'
-          ? decimalError(draft.costPerLead, 'cost per paid registration', 100_000)
+          ? moneyInputError(
+              draft.costPerLead,
+              'cost per paid registration',
+              monetaryInputLimit,
+              currency,
+              { allowZero: true },
+            )
           : null,
         draft.paidPromotionPlanned === 'yes'
-          ? decimalError(draft.adBudget, 'available ad budget', 100_000_000)
+          ? moneyInputError(
+              draft.adBudget,
+              'available ad budget',
+              monetaryInputLimit,
+              currency,
+              { allowZero: true },
+            )
           : null,
         draft.paidPromotionPlanned === 'yes' &&
         Number(draft.adBudget) > 0 &&

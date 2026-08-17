@@ -1,5 +1,10 @@
 import { useMemo, useState } from 'react'
 import {
+  isSupportedCurrencyCode,
+  normalizeCurrencyCode,
+  type CurrencyCode,
+} from '../domain/currency'
+import {
   createOfferEconomicsEditor,
   editOfferEconomics,
   resolveOfferEconomicsEditor,
@@ -7,13 +12,25 @@ import {
   type OfferEconomicsField,
 } from '../domain/offerEconomics'
 
-export const useOfferEconomics = (initialDraft: OfferEconomicsDraft) => {
-  const [editor, setEditor] = useState(() => createOfferEconomicsEditor(initialDraft))
+const resolvedCurrency = (currency?: string): CurrencyCode => {
+  const normalized = normalizeCurrencyCode(currency ?? '')
+  return isSupportedCurrencyCode(normalized) ? normalized : 'EUR'
+}
 
-  const resolved = useMemo(() => resolveOfferEconomicsEditor(editor), [editor])
+export const useOfferEconomics = (
+  initialDraft: OfferEconomicsDraft,
+  currency?: string,
+) => {
+  const [editor, setEditor] = useState(() => createOfferEconomicsEditor(initialDraft))
+  const activeCurrency = resolvedCurrency(currency)
+
+  const resolved = useMemo(
+    () => resolveOfferEconomicsEditor(editor, activeCurrency),
+    [activeCurrency, editor],
+  )
 
   const update = (field: OfferEconomicsField, value: string) => {
-    setEditor((current) => editOfferEconomics(current, field, value))
+    setEditor((current) => editOfferEconomics(current, field, value, activeCurrency))
   }
 
   const reset = (nextDraft: OfferEconomicsDraft) => {

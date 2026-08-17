@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { LaunchCalculation } from '../domain/calculator'
 import type { EmailReachTrace } from '../domain/beginner'
+import { moneyFormatter } from '../domain/currency'
 import type { LaunchInputs } from '../domain/schema'
 import type { Recommendation, StrategyPlan } from '../domain/strategy'
 import { appVariantHref } from '../variants/appVariant'
@@ -16,14 +17,6 @@ type BeginnerResultsProps = {
 }
 
 type BeginnerMove = Pick<Recommendation, 'id' | 'title' | 'body' | 'sourceIds'>
-
-const formatter = (currency: LaunchInputs['currency']) =>
-  new Intl.NumberFormat('en', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  })
 
 const makeBeginnerMoves = (strategy: StrategyPlan): BeginnerMove[] => {
   const moves: BeginnerMove[] = []
@@ -63,6 +56,39 @@ const makeBeginnerMoves = (strategy: StrategyPlan): BeginnerMove[] => {
   return moves.slice(0, 3)
 }
 
+export const createBeginnerPlanCopy = (
+  inputs: LaunchInputs,
+  calculation: LaunchCalculation,
+  strategy: StrategyPlan,
+  emailReachTrace: EmailReachTrace,
+) => {
+  const selected = calculation.selected
+  const money = moneyFormatter(inputs.currency)
+  const beginnerMoves = makeBeginnerMoves(strategy)
+
+  return [
+    `Starting recommendation: ${strategy.headline}`,
+    `Revenue goal: ${money.format(inputs.revenueGoal)}`,
+    `Required buyers: ${selected.buyersRequired}`,
+    `Required registrations: ${selected.registrationsRequired}`,
+    `Live attendees at target: ${selected.attendeesExpected}`,
+    `Email reach estimate: ${emailReachTrace.expression} = ${emailReachTrace.result} registrations`,
+    `Registration gap: ${selected.paidRegistrationGap}`,
+    '',
+    'Next moves:',
+    ...beginnerMoves.map((move) => `- ${move.title}: ${move.body}`),
+    ...(strategy.coachDecisions.length > 0
+      ? [
+          '',
+          'Needs coach review:',
+          ...strategy.coachDecisions.map((decision) => `- ${decision}`),
+        ]
+      : []),
+    '',
+    `Selected inputs: ${inputs.conversionRatePercent}% sales conversion, ${inputs.showUpRatePercent}% live attendance, ${inputs.groupJoinRatePercent}% group joining, ${inputs.workshopDurationDays}-day workshop.`,
+  ].join('\n')
+}
+
 export function BeginnerResults({
   inputs,
   calculation,
@@ -73,29 +99,16 @@ export function BeginnerResults({
 }: BeginnerResultsProps) {
   const [copied, setCopied] = useState(false)
   const selected = calculation.selected
-  const money = formatter(inputs.currency)
+  const money = moneyFormatter(inputs.currency)
   const beginnerMoves = makeBeginnerMoves(strategy)
   const registrationGap = selected.paidRegistrationGap
   const { emailListSize, signupRatePercent: organicSignupRatePercent } = emailReachTrace
 
   const copyPlan = async () => {
-    const summary = [
-      `Starting recommendation: ${strategy.headline}`,
-      `Revenue goal: ${money.format(inputs.revenueGoal)}`,
-      `Required buyers: ${selected.buyersRequired}`,
-      `Required registrations: ${selected.registrationsRequired}`,
-      `Live attendees at target: ${selected.attendeesExpected}`,
-      `Email reach estimate: ${emailReachTrace.expression} = ${emailReachTrace.result} registrations`,
-      `Registration gap: ${registrationGap}`,
-      '',
-      'Next moves:',
-      ...beginnerMoves.map((move) => `- ${move.title}: ${move.body}`),
-      '',
-      `Selected inputs: ${inputs.conversionRatePercent}% sales conversion, ${inputs.showUpRatePercent}% live attendance, ${inputs.groupJoinRatePercent}% group joining, ${inputs.workshopDurationDays}-day workshop.`,
-    ].join('\n')
-
     try {
-      await navigator.clipboard.writeText(summary)
+      await navigator.clipboard.writeText(
+        createBeginnerPlanCopy(inputs, calculation, strategy, emailReachTrace),
+      )
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1800)
     } catch {
@@ -183,6 +196,21 @@ export function BeginnerResults({
           ))}
         </div>
       </section>
+
+      {strategy.coachDecisions.length > 0 ? (
+        <section className="beginner-coach-review" aria-labelledby="beginner-coach-title">
+          <p className="section-label">Needs coach review</p>
+          <h2 id="beginner-coach-title">Some guidance is deliberately left open.</h2>
+          <ul className="coach-list">
+            {strategy.coachDecisions.map((decision) => (
+              <li key={decision}>{decision}</li>
+            ))}
+          </ul>
+          <p>
+            The prototype will not convert or invent rules that are not in the approved sources.
+          </p>
+        </section>
+      ) : null}
 
       <details className="beginner-assumptions">
         <summary>See the selected inputs and sources</summary>

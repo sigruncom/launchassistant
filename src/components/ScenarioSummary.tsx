@@ -1,14 +1,7 @@
 import type { LaunchCalculation } from '../domain/calculator'
+import { formatMinorUnits, moneyFormatter } from '../domain/currency'
 import type { LaunchInputs } from '../domain/schema'
 import { SourceChip } from './SourceChip'
-
-const formatter = (currency: LaunchInputs['currency']) =>
-  new Intl.NumberFormat('en', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  })
 
 type ScenarioSummaryProps = {
   inputs: LaunchInputs
@@ -17,7 +10,7 @@ type ScenarioSummaryProps = {
 
 export function ScenarioSummary({ inputs, calculation }: ScenarioSummaryProps) {
   const selected = calculation.selected
-  const money = formatter(inputs.currency)
+  const money = moneyFormatter(inputs.currency)
   const versionLabel = calculation.calculatorVersion.replace('prototype-', 'v')
   const largestRegistrationTarget = Math.max(
     ...calculation.scenarios.map((scenario) => scenario.registrationsRequired),
@@ -79,7 +72,7 @@ export function ScenarioSummary({ inputs, calculation }: ScenarioSummaryProps) {
         </div>
         <div>
           <span>Ad spend required</span>
-          <strong>{money.format(selected.requiredAdSpendCents / 100)}</strong>
+          <strong>{formatMinorUnits(inputs.currency, selected.requiredAdSpendMinorUnits)}</strong>
         </div>
       </div>
 

@@ -421,6 +421,10 @@ button:disabled {
   max-width: 220px;
 }
 
+.currency-more-field {
+  margin-top: 14px;
+}
+
 .economics-builder {
   display: grid;
   gap: 24px;
@@ -1772,6 +1776,32 @@ button:disabled {
   margin-top: -10px;
 }
 
+.beginner-coach-review {
+  margin-top: 38px;
+  padding: 34px 38px;
+  border-radius: 0 32px 32px 32px;
+  background: var(--sigrun-black);
+  color: var(--sigrun-white);
+}
+
+.beginner-coach-review .section-label {
+  color: var(--sigrun-white);
+}
+
+.beginner-coach-review h2 {
+  margin: 10px 0 18px;
+  font-size: 24px;
+  font-weight: 430;
+  letter-spacing: -0.03em;
+}
+
+.beginner-coach-review > p:last-child {
+  margin: 20px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .beginner-assumptions {
   margin-top: 38px;
   border-top: 1px solid var(--line);
@@ -2148,6 +2178,10 @@ button:disabled {
   .beginner-next {
     padding: 36px 24px;
     border-radius: 0 48px 48px 48px;
+  }
+
+  .beginner-coach-review {
+    padding: 28px 24px;
   }
 
   .beginner-gap {

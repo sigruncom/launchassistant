@@ -1,3 +1,9 @@
+import {
+  currencyMinorUnitDigits,
+  currencyMinorUnitScale,
+  type CurrencyCode,
+} from './currency'
+
 export const offerEconomicsFieldValues = [
   'price',
   'spotsToSell',
@@ -23,20 +29,23 @@ export type ResolvedOfferEconomicsEditor = {
 }
 
 export const offerEconomicsLimits = {
-  price: 1_000_000,
+  price: 1_000_000_000_000,
   spotsToSell: 100_000_000,
-  revenueGoal: 100_000_000,
+  revenueGoal: 1_000_000_000_000,
 } as const
 
-export const hasSupportedCentPrecision = (value: number) =>
-  Number.isFinite(value) && Number(value.toFixed(2)) === value
+export const hasSupportedCurrencyPrecision = (
+  value: number,
+  currency: CurrencyCode,
+) => Number.isFinite(value)
+  && Number(value.toFixed(currencyMinorUnitDigits(currency))) === value
 
 type OfferEconomicsValues = {
-  priceCents: bigint
+  priceMinorUnits: bigint
   spotsToSell: bigint
-  revenueGoalCents: bigint
-  impliedRevenueCents: bigint
-  overGoalCents: bigint
+  revenueGoalMinorUnits: bigint
+  impliedRevenueMinorUnits: bigint
+  overGoalMinorUnits: bigint
 }
 
 export type OfferEconomicsResult =
@@ -59,55 +68,87 @@ export type OfferEconomicsResult =
       errors: OfferEconomicsErrors
     }
 
-const CENTS_PER_UNIT = 100n
-const MAX_PRICE_CENTS = BigInt(offerEconomicsLimits.price) * CENTS_PER_UNIT
-const MAX_REVENUE_CENTS = BigInt(offerEconomicsLimits.revenueGoal) * CENTS_PER_UNIT
 const MAX_SPOTS = BigInt(offerEconomicsLimits.spotsToSell)
 
 const ceilDivide = (numerator: bigint, denominator: bigint) =>
   (numerator + denominator - 1n) / denominator
 
-const formatCentsForInput = (cents: bigint) => {
-  const whole = cents / CENTS_PER_UNIT
-  const fraction = cents % CENTS_PER_UNIT
+export const formatMinorUnitsForInput = (
+  minorUnits: bigint,
+  currency: CurrencyCode,
+) => {
+  const digits = currencyMinorUnitDigits(currency)
+  const scale = BigInt(currencyMinorUnitScale(currency))
+  const whole = minorUnits / scale
+  const fraction = minorUnits % scale
 
-  return fraction === 0n
+  return digits === 0 || fraction === 0n
     ? whole.toString()
-    : `${whole}.${fraction.toString().padStart(2, '0')}`
+    : `${whole}.${fraction.toString().padStart(digits, '0')}`
+}
+
+const precisionDescription = (currency: CurrencyCode) => {
+  const digits = currencyMinorUnitDigits(currency)
+  if (digits === 0) return 'as a whole amount with no decimals'
+  return `with no more than ${digits} decimal places`
+}
+
+const minimumMoneyInput = (currency: CurrencyCode) => {
+  const digits = currencyMinorUnitDigits(currency)
+  return digits === 0 ? '1' : `0.${'0'.repeat(digits - 1)}1`
+}
+
+export const moneyInputError = (
+  rawValue: string,
+  label: string,
+  maximum: number,
+  currency: CurrencyCode,
+  options: { allowZero?: boolean } = {},
+) => {
+  const value = rawValue.trim()
+  if (value === '') return `Enter ${label}.`
+
+  const digits = currencyMinorUnitDigits(currency)
+  const pattern = digits === 0
+    ? /^\d+$/
+    : new RegExp(`^\\d+(?:\\.\\d{1,${digits}})?$`)
+  if (!pattern.test(value)) {
+    return `Enter a valid ${label} ${precisionDescription(currency)}.`
+  }
+
+  const scale = BigInt(currencyMinorUnitScale(currency))
+  const [whole, fraction = ''] = value.split('.')
+  const minorUnits = BigInt(whole) * scale
+    + BigInt(fraction.padEnd(digits, '0') || '0')
+  const minimum = options.allowZero ? 0n : 1n
+  if (minorUnits < minimum) {
+    return options.allowZero
+      ? `Enter ${label} of 0 or more.`
+      : `Enter ${label} of at least ${minimumMoneyInput(currency)}.`
+  }
+  if (minorUnits > BigInt(maximum) * scale) {
+    return `${label[0].toUpperCase()}${label.slice(1)} is too large for this prototype.`
+  }
+  return null
 }
 
 const parseMoney = (
   rawValue: string,
   field: 'price' | 'revenueGoal',
+  currency: CurrencyCode,
 ): { value?: bigint; error?: string } => {
   const value = rawValue.trim()
   const label = field === 'price' ? 'price per client' : 'revenue goal'
+  const maximum = offerEconomicsLimits[field]
+  const error = moneyInputError(value, label, maximum, currency)
+  if (error) return { error }
 
-  if (value === '') {
-    return { error: `Enter a ${label}.` }
+  const digits = currencyMinorUnitDigits(currency)
+  const scale = BigInt(currencyMinorUnitScale(currency))
+  const [whole, fraction = ''] = value.split('.')
+  return {
+    value: BigInt(whole) * scale + BigInt(fraction.padEnd(digits, '0') || '0'),
   }
-
-  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(value)
-  if (!match) {
-    return { error: `Enter a positive ${label} with no more than two decimals.` }
-  }
-
-  const cents = BigInt(match[1]) * CENTS_PER_UNIT + BigInt((match[2] ?? '').padEnd(2, '0'))
-  if (cents <= 0n) {
-    return { error: `Enter a ${label} of at least 0.01.` }
-  }
-
-  const maximum = field === 'price' ? MAX_PRICE_CENTS : MAX_REVENUE_CENTS
-  if (cents > maximum) {
-    return {
-      error:
-        field === 'price'
-          ? 'Price per client is too large for this prototype.'
-          : 'Revenue goal is too large for this prototype.',
-    }
-  }
-
-  return { value: cents }
 }
 
 const parseSpots = (rawValue: string): { value?: bigint; error?: string } => {
@@ -136,9 +177,10 @@ const parseSpots = (rawValue: string): { value?: bigint; error?: string } => {
 const offerEconomicsFieldError = (
   field: OfferEconomicsField,
   value: string,
+  currency: CurrencyCode,
 ) => field === 'spotsToSell'
   ? parseSpots(value).error
-  : parseMoney(value, field).error
+  : parseMoney(value, field, currency).error
 
 const invalidResult = (
   draft: OfferEconomicsDraft,
@@ -154,19 +196,20 @@ const invalidResult = (
 const successfulResult = (
   calculatedField: OfferEconomicsField,
   exact: OfferEconomicsValues,
+  currency: CurrencyCode,
 ): OfferEconomicsResult => ({
   success: true,
   calculatedField,
   values: {
-    price: formatCentsForInput(exact.priceCents),
+    price: formatMinorUnitsForInput(exact.priceMinorUnits, currency),
     spotsToSell: exact.spotsToSell.toString(),
-    revenueGoal: formatCentsForInput(exact.revenueGoalCents),
+    revenueGoal: formatMinorUnitsForInput(exact.revenueGoalMinorUnits, currency),
   },
   errors: {},
   numbers: {
-    price: Number(exact.priceCents) / 100,
+    price: Number(exact.priceMinorUnits) / currencyMinorUnitScale(currency),
     spotsToSell: Number(exact.spotsToSell),
-    revenueGoal: Number(exact.revenueGoalCents) / 100,
+    revenueGoal: Number(exact.revenueGoalMinorUnits) / currencyMinorUnitScale(currency),
   },
   exact,
 })
@@ -174,10 +217,15 @@ const successfulResult = (
 export const calculateOfferEconomics = (
   draft: OfferEconomicsDraft,
   calculatedField: OfferEconomicsField,
+  currency: CurrencyCode = 'EUR',
 ): OfferEconomicsResult => {
+  const scale = BigInt(currencyMinorUnitScale(currency))
+  const maximumPriceMinorUnits = BigInt(offerEconomicsLimits.price) * scale
+  const maximumRevenueMinorUnits = BigInt(offerEconomicsLimits.revenueGoal) * scale
+
   if (calculatedField === 'spotsToSell') {
-    const price = parseMoney(draft.price, 'price')
-    const goal = parseMoney(draft.revenueGoal, 'revenueGoal')
+    const price = parseMoney(draft.price, 'price', currency)
+    const goal = parseMoney(draft.revenueGoal, 'revenueGoal', currency)
     const errors: OfferEconomicsErrors = {
       ...(price.error ? { price: price.error } : {}),
       ...(goal.error ? { revenueGoal: goal.error } : {}),
@@ -194,24 +242,24 @@ export const calculateOfferEconomics = (
       })
     }
 
-    const impliedRevenueCents = price.value * spotsToSell
-    if (impliedRevenueCents > MAX_REVENUE_CENTS) {
+    const impliedRevenueMinorUnits = price.value * spotsToSell
+    if (impliedRevenueMinorUnits > maximumRevenueMinorUnits) {
       return invalidResult(draft, calculatedField, {
         spotsToSell: 'The calculated plan exceeds the revenue limit for this prototype.',
       })
     }
 
     return successfulResult(calculatedField, {
-      priceCents: price.value,
+      priceMinorUnits: price.value,
       spotsToSell,
-      revenueGoalCents: goal.value,
-      impliedRevenueCents,
-      overGoalCents: impliedRevenueCents - goal.value,
-    })
+      revenueGoalMinorUnits: goal.value,
+      impliedRevenueMinorUnits,
+      overGoalMinorUnits: impliedRevenueMinorUnits - goal.value,
+    }, currency)
   }
 
   if (calculatedField === 'revenueGoal') {
-    const price = parseMoney(draft.price, 'price')
+    const price = parseMoney(draft.price, 'price', currency)
     const spots = parseSpots(draft.spotsToSell)
     const errors: OfferEconomicsErrors = {
       ...(price.error ? { price: price.error } : {}),
@@ -222,23 +270,23 @@ export const calculateOfferEconomics = (
       return invalidResult(draft, calculatedField, errors)
     }
 
-    const revenueGoalCents = price.value * spots.value
-    if (revenueGoalCents > MAX_REVENUE_CENTS) {
+    const revenueGoalMinorUnits = price.value * spots.value
+    if (revenueGoalMinorUnits > maximumRevenueMinorUnits) {
       return invalidResult(draft, calculatedField, {
         revenueGoal: 'The calculated revenue goal is too large for this prototype.',
       })
     }
 
     return successfulResult(calculatedField, {
-      priceCents: price.value,
+      priceMinorUnits: price.value,
       spotsToSell: spots.value,
-      revenueGoalCents,
-      impliedRevenueCents: revenueGoalCents,
-      overGoalCents: 0n,
-    })
+      revenueGoalMinorUnits,
+      impliedRevenueMinorUnits: revenueGoalMinorUnits,
+      overGoalMinorUnits: 0n,
+    }, currency)
   }
 
-  const goal = parseMoney(draft.revenueGoal, 'revenueGoal')
+  const goal = parseMoney(draft.revenueGoal, 'revenueGoal', currency)
   const spots = parseSpots(draft.spotsToSell)
   const errors: OfferEconomicsErrors = {
     ...(goal.error ? { revenueGoal: goal.error } : {}),
@@ -249,35 +297,35 @@ export const calculateOfferEconomics = (
     return invalidResult(draft, calculatedField, errors)
   }
 
-  const priceCents = ceilDivide(goal.value, spots.value)
-  if (priceCents > MAX_PRICE_CENTS) {
+  const priceMinorUnits = ceilDivide(goal.value, spots.value)
+  if (priceMinorUnits > maximumPriceMinorUnits) {
     return invalidResult(draft, calculatedField, {
       price: 'The calculated price per client is too large for this prototype.',
     })
   }
 
-  const requiredSpotsAtRoundedPrice = ceilDivide(goal.value, priceCents)
+  const requiredSpotsAtRoundedPrice = ceilDivide(goal.value, priceMinorUnits)
   if (requiredSpotsAtRoundedPrice !== spots.value) {
     return invalidResult(draft, calculatedField, {
       spotsToSell:
-        'That goal is too small for this many client spots at whole-cent prices. Lower the spots or raise the goal.',
+        `That goal is too small for this many client spots at ${currency}'s smallest currency unit. Lower the spots or raise the goal.`,
     })
   }
 
-  const impliedRevenueCents = priceCents * spots.value
-  if (impliedRevenueCents > MAX_REVENUE_CENTS) {
+  const impliedRevenueMinorUnits = priceMinorUnits * spots.value
+  if (impliedRevenueMinorUnits > maximumRevenueMinorUnits) {
     return invalidResult(draft, calculatedField, {
       price: 'The calculated plan exceeds the revenue limit for this prototype.',
     })
   }
 
   return successfulResult(calculatedField, {
-    priceCents,
+    priceMinorUnits,
     spotsToSell: spots.value,
-    revenueGoalCents: goal.value,
-    impliedRevenueCents,
-    overGoalCents: impliedRevenueCents - goal.value,
-  })
+    revenueGoalMinorUnits: goal.value,
+    impliedRevenueMinorUnits,
+    overGoalMinorUnits: impliedRevenueMinorUnits - goal.value,
+  }, currency)
 }
 
 const initialSourcePriority: OfferEconomicsField[] = [
@@ -297,6 +345,7 @@ export const createOfferEconomicsEditor = (
 
 export const resolveOfferEconomicsEditor = (
   editor: OfferEconomicsEditorState,
+  currency: CurrencyCode = 'EUR',
 ): ResolvedOfferEconomicsEditor => {
   if (editor.sourceOrder.length < 2) {
     return {
@@ -315,7 +364,11 @@ export const resolveOfferEconomicsEditor = (
   }
 
   if (editor.pendingCalculatedField === calculatedField) {
-    const error = offerEconomicsFieldError(calculatedField, editor.draft[calculatedField])
+    const error = offerEconomicsFieldError(
+      calculatedField,
+      editor.draft[calculatedField],
+      currency,
+    )
     if (error) {
       return {
         calculatedField,
@@ -330,7 +383,7 @@ export const resolveOfferEconomicsEditor = (
     }
   }
 
-  const result = calculateOfferEconomics(editor.draft, calculatedField)
+  const result = calculateOfferEconomics(editor.draft, calculatedField, currency)
   return {
     calculatedField,
     result,
@@ -342,12 +395,13 @@ export const editOfferEconomics = (
   editor: OfferEconomicsEditorState,
   field: OfferEconomicsField,
   value: string,
+  currency: CurrencyCode = 'EUR',
 ): OfferEconomicsEditorState => {
-  const current = resolveOfferEconomicsEditor(editor)
+  const current = resolveOfferEconomicsEditor(editor, currency)
   const editingCalculatedField = current.calculatedField === field
     && !editor.sourceOrder.includes(field)
 
-  if (editingCalculatedField && offerEconomicsFieldError(field, value)) {
+  if (editingCalculatedField && offerEconomicsFieldError(field, value, currency)) {
     return {
       draft: {
         ...current.values,
@@ -376,10 +430,17 @@ export const editOfferEconomics = (
 export const offerEconomicsDraftFromNumbers = (
   price: number,
   revenueGoal: number,
+  currency: CurrencyCode = 'EUR',
 ): OfferEconomicsDraft => ({
-  price: formatCentsForInput(BigInt(Math.round(price * 100))),
+  price: formatMinorUnitsForInput(
+    BigInt(Math.round(price * currencyMinorUnitScale(currency))),
+    currency,
+  ),
   spotsToSell: '',
-  revenueGoal: formatCentsForInput(BigInt(Math.round(revenueGoal * 100))),
+  revenueGoal: formatMinorUnitsForInput(
+    BigInt(Math.round(revenueGoal * currencyMinorUnitScale(currency))),
+    currency,
+  ),
 })
 
 export const offerEconomicsErrors = (result: OfferEconomicsResult | null) =>

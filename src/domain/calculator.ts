@@ -1,6 +1,7 @@
 import { launchInputSchema, type LaunchInputs } from './schema'
+import { currencyMinorUnitDigits, currencyMinorUnitScale } from './currency'
 
-export const CALCULATOR_VERSION = 'prototype-0.3.1'
+export const CALCULATOR_VERSION = 'prototype-0.4.0'
 export const SALES_CONVERSION_BASIS = 'all-workshop-signups' as const
 
 export type ScenarioKey = 'cautious' | 'planning' | 'benchmark'
@@ -23,11 +24,11 @@ export type LaunchScenario = {
   projectedAttendeesExpected: number
   groupJoinsExpected: number
   paidRegistrationGap: number
-  requiredAdSpendCents: number
+  requiredAdSpendMinorUnits: bigint
   budgetSupportedPaidRegistrations: number
   projectedRegistrations: number
   projectedBuyers: number
-  projectedRevenueCents: number
+  projectedRevenueMinorUnits: bigint
   registrationGapAfterBudget: number
   trace: FormulaTrace[]
 }
@@ -35,10 +36,12 @@ export type LaunchScenario = {
 export type LaunchCalculation = {
   calculatorVersion: string
   salesConversionBasis: typeof SALES_CONVERSION_BASIS
-  goalCents: number
-  priceCents: number
-  costPerLeadCents: number
-  adBudgetCents: number
+  minorUnitDigits: number
+  minorUnitScale: number
+  goalMinorUnits: bigint
+  priceMinorUnits: bigint
+  costPerLeadMinorUnits: bigint
+  adBudgetMinorUnits: bigint
   scenarios: LaunchScenario[]
   selected: LaunchScenario
 }
@@ -53,7 +56,11 @@ const scenarios: Array<{
   { key: 'benchmark', label: 'Sigrun benchmark', conversionRatePercent: 3 },
 ]
 
-const toCents = (value: number) => Math.round(value * 100)
+const toMinorUnits = (value: number, scale: number) =>
+  BigInt(Math.round(value * scale))
+
+const ceilDivideBigInt = (numerator: bigint, denominator: bigint) =>
+  (numerator + denominator - 1n) / denominator
 
 export const ceilDivide = (numerator: number, denominator: number) => {
   if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) {
@@ -65,11 +72,17 @@ export const ceilDivide = (numerator: number, denominator: number) => {
 
 export const calculateLaunch = (rawInputs: LaunchInputs): LaunchCalculation => {
   const inputs = launchInputSchema.parse(rawInputs)
-  const goalCents = toCents(inputs.revenueGoal)
-  const priceCents = toCents(inputs.price)
-  const costPerLeadCents = toCents(inputs.costPerLead)
-  const adBudgetCents = toCents(inputs.adBudget)
-  const buyersRequired = ceilDivide(goalCents, priceCents)
+  const minorUnitDigits = currencyMinorUnitDigits(inputs.currency)
+  const minorUnitScale = currencyMinorUnitScale(inputs.currency)
+  const goalMinorUnits = toMinorUnits(inputs.revenueGoal, minorUnitScale)
+  const priceMinorUnits = toMinorUnits(inputs.price, minorUnitScale)
+  const costPerLeadMinorUnits = toMinorUnits(inputs.costPerLead, minorUnitScale)
+  const adBudgetMinorUnits = toMinorUnits(inputs.adBudget, minorUnitScale)
+  const buyersRequiredExact = ceilDivideBigInt(goalMinorUnits, priceMinorUnits)
+  if (buyersRequiredExact > 100_000_000n) {
+    throw new Error('The required buyer target is too large for this prototype.')
+  }
+  const buyersRequired = Number(buyersRequiredExact)
 
   const calculatedScenarios = scenarios.map<LaunchScenario>((scenario) => {
     const conversionBasisPoints = scenario.conversionRatePercent * 100
@@ -84,9 +97,11 @@ export const calculateLaunch = (rawInputs: LaunchInputs): LaunchCalculation => {
       0,
       registrationsRequired - inputs.organicRegistrations,
     )
-    const requiredAdSpendCents = paidRegistrationGap * costPerLeadCents
+    const requiredAdSpendMinorUnits = BigInt(paidRegistrationGap) * costPerLeadMinorUnits
     const budgetSupportedPaidRegistrations =
-      costPerLeadCents > 0 ? Math.floor(adBudgetCents / costPerLeadCents) : 0
+      costPerLeadMinorUnits > 0n
+        ? Number(adBudgetMinorUnits / costPerLeadMinorUnits)
+        : 0
     const projectedRegistrations =
       inputs.organicRegistrations + budgetSupportedPaidRegistrations
     const projectedAttendeesExpected = Math.round(
@@ -95,7 +110,7 @@ export const calculateLaunch = (rawInputs: LaunchInputs): LaunchCalculation => {
     const projectedBuyers = Math.floor(
       projectedRegistrations * (scenario.conversionRatePercent / 100),
     )
-    const projectedRevenueCents = projectedBuyers * priceCents
+    const projectedRevenueMinorUnits = BigInt(projectedBuyers) * priceMinorUnits
     const registrationGapAfterBudget = Math.max(
       0,
       registrationsRequired - projectedRegistrations,
@@ -109,17 +124,17 @@ export const calculateLaunch = (rawInputs: LaunchInputs): LaunchCalculation => {
       projectedAttendeesExpected,
       groupJoinsExpected,
       paidRegistrationGap,
-      requiredAdSpendCents,
+      requiredAdSpendMinorUnits,
       budgetSupportedPaidRegistrations,
       projectedRegistrations,
       projectedBuyers,
-      projectedRevenueCents,
+      projectedRevenueMinorUnits,
       registrationGapAfterBudget,
       trace: [
         {
           id: 'FORMULA-BUYERS-001',
           label: 'Required buyers',
-          expression: `ceil(${goalCents} / ${priceCents})`,
+          expression: `ceil(${goalMinorUnits} / ${priceMinorUnits})`,
           result: buyersRequired,
           source: 'derived',
         },
@@ -159,10 +174,12 @@ export const calculateLaunch = (rawInputs: LaunchInputs): LaunchCalculation => {
   return {
     calculatorVersion: CALCULATOR_VERSION,
     salesConversionBasis: SALES_CONVERSION_BASIS,
-    goalCents,
-    priceCents,
-    costPerLeadCents,
-    adBudgetCents,
+    minorUnitDigits,
+    minorUnitScale,
+    goalMinorUnits,
+    priceMinorUnits,
+    costPerLeadMinorUnits,
+    adBudgetMinorUnits,
     scenarios: calculatedScenarios,
     selected,
   }

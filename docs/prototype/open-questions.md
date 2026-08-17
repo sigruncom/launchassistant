@@ -10,7 +10,7 @@ These questions should be answered before this prototype becomes a production ca
 6. Which invite-email schedule is authoritative: the four-email sequence on p. 19 or the five-email sequence on p. 24?
 7. At exactly 3% post-launch conversion, should the client receive an upsell, downsell, neither, or coach review?
 8. Is cost per paid registration entered manually, sourced from prior launches, or estimated by a separate model?
-9. Which offer types, currencies and launch archetypes must the first pilot support?
+9. Which currencies should be pinned as the most visible shortcuts based on Advantage usage, and are any additional ISO currencies needed beyond the versioned prototype catalogue? EUR remains first and no FX conversion is performed.
 10. What defines a bigger or older email list, and which lower signup rates should be suggested? Should list age, engagement or audience warmth control the guidance?
 11. Should an email-list registration estimate round to the nearest whole person, down, or up?
 12. Which five historical launches should form the first validation set, and what inputs, outputs, recommendation, red flags and coach override does Sigrun approve for each?

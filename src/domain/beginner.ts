@@ -2,12 +2,22 @@ import { z } from 'zod'
 import {
   audienceContextValues,
   conversionValues,
-  currencyValues,
+  currencySchema,
   launchInputSchema,
   workshopDurationValues,
   type LaunchInputs,
 } from './schema'
-import { offerEconomicsLimits } from './offerEconomics'
+import {
+  moneyInputError,
+  offerEconomicsErrors,
+  offerEconomicsLimits,
+  type OfferEconomicsResult,
+} from './offerEconomics'
+import {
+  currencyCodeError,
+  type CurrencyCode,
+  type CurrencySelectValue,
+} from './currency'
 
 export const beginnerResearchValues = ['yes', 'not-yet'] as const
 export const beginnerYesNoValues = ['yes', 'no'] as const
@@ -31,8 +41,19 @@ export type EmailReachTrace = {
 export type BeginnerResearch = (typeof beginnerResearchValues)[number]
 export type BeginnerYesNo = (typeof beginnerYesNoValues)[number]
 
+export const beginnerGoalFallbackErrors = (
+  currency: CurrencySelectValue,
+  economics: OfferEconomicsResult | null,
+) => {
+  const currencyError = currencyCodeError(currency)
+  return [
+    ...(currencyError ? [currencyError] : []),
+    ...offerEconomicsErrors(economics),
+  ]
+}
+
 export type BeginnerDraft = {
-  currency: LaunchInputs['currency'] | ''
+  currency: CurrencySelectValue
   price: string
   spotsToSell: string
   revenueGoal: string
@@ -49,28 +70,6 @@ export type BeginnerDraft = {
   surveyResponses: string
   facebookGroupFit: BeginnerYesNo | ''
 }
-
-const requiredMoney = (label: string, maximum: number) =>
-  z
-    .string()
-    .trim()
-    .refine((value) => value !== '', { message: `Enter ${label}.` })
-    .refine(
-      (value) => value === '' || /^\d+(?:\.\d{1,2})?$/.test(value),
-      { message: `Enter a valid ${label} with no more than two decimals.` },
-    )
-    .refine(
-      (value) => value === '' || !/^\d+(?:\.\d{1,2})?$/.test(value) || Number(value) >= 0.01,
-      { message: `Enter ${label} of at least 0.01.` },
-    )
-    .refine(
-      (value) =>
-        value === '' ||
-        !/^\d+(?:\.\d{1,2})?$/.test(value) ||
-        (Number.isFinite(Number(value)) && Number(value) <= maximum),
-      { message: `${label[0].toUpperCase()}${label.slice(1)} is too large for this prototype.` },
-    )
-    .transform(Number)
 
 const requiredWholeNumber = (label: string, maximum: number) =>
   z
@@ -138,13 +137,13 @@ export const estimateOrganicRegistrationsFromEmailList = (
   signupRatePercent: number,
 ) => createEmailReachTrace(emailListSize, signupRatePercent).result
 
-export const beginnerGoalSchema = z.object({
-  currency: z.enum(currencyValues, { error: 'Choose a currency.' }),
-  price: requiredMoney('what one client will pay', offerEconomicsLimits.price),
-  revenueGoal: requiredMoney('your revenue goal', offerEconomicsLimits.revenueGoal),
-})
+const beginnerGoalShape = {
+  currency: currencySchema,
+  price: z.string(),
+  revenueGoal: z.string(),
+} satisfies z.ZodRawShape
 
-export const beginnerReachSchema = beginnerGoalSchema.extend({
+const beginnerReachShape = {
   emailListSize: requiredWholeNumber(
     'the number of people on your email list',
     EMAIL_LIST_SIZE_MAX,
@@ -154,9 +153,9 @@ export const beginnerReachSchema = beginnerGoalSchema.extend({
     ORGANIC_SIGNUP_RATE_MAX,
     0,
   ),
-})
+} satisfies z.ZodRawShape
 
-export const beginnerWorkshopSchema = beginnerReachSchema.extend({
+const beginnerWorkshopShape = {
   audienceContext: z.enum(audienceContextValues, {
     error: 'Choose the audience type that fits best.',
   }),
@@ -164,9 +163,9 @@ export const beginnerWorkshopSchema = beginnerReachSchema.extend({
     [z.literal(workshopDurationValues[0]), z.literal(workshopDurationValues[1])],
     { error: 'Choose a one-day or three-day workshop.' },
   ),
-})
+} satisfies z.ZodRawShape
 
-export const beginnerAttendanceSchema = beginnerWorkshopSchema.extend({
+const beginnerAttendanceShape = {
   showUpRatePercent: requiredPercent('an expected live show-up rate', 100),
   replayOffered: z
     .enum(beginnerYesNoValues, { error: 'Choose whether a replay will be offered.' })
@@ -174,9 +173,9 @@ export const beginnerAttendanceSchema = beginnerWorkshopSchema.extend({
   showUpBonusPlanned: z
     .enum(beginnerYesNoValues, { error: 'Choose whether a show-up bonus is planned.' })
     .transform((value) => value === 'yes'),
-})
+} satisfies z.ZodRawShape
 
-export const beginnerSalesSchema = beginnerAttendanceSchema.extend({
+const beginnerSalesShape = {
   conversionRatePercent: z.union(
     [
       z.literal(conversionValues[0]),
@@ -186,9 +185,9 @@ export const beginnerSalesSchema = beginnerAttendanceSchema.extend({
     { error: 'Choose a 1%, 2% or 3% sales case.' },
   ),
   groupJoinRatePercent: requiredPercent('an expected workshop-group join rate', 100),
-})
+} satisfies z.ZodRawShape
 
-export const beginnerAnswerSchema = beginnerSalesSchema.extend({
+const beginnerAnswerShape = {
   recentResearch: z
     .enum(beginnerResearchValues, {
       error: 'Choose Yes or Not yet for recent client research.',
@@ -200,6 +199,78 @@ export const beginnerAnswerSchema = beginnerSalesSchema.extend({
       error: 'Choose whether an online workshop group fits this audience.',
     })
     .transform((value) => value === 'yes'),
+} satisfies z.ZodRawShape
+
+type BeginnerGoalDraft = {
+  currency: CurrencyCode
+  price: string
+  revenueGoal: string
+}
+
+const createBeginnerSchema = <Shape extends z.ZodRawShape>(shape: Shape) =>
+  z
+    .object({ ...beginnerGoalShape, ...shape })
+    .superRefine((value, context) => {
+      const goal = value as BeginnerGoalDraft
+      const priceError = moneyInputError(
+        goal.price,
+        'what one client will pay',
+        offerEconomicsLimits.price,
+        goal.currency,
+      )
+      const revenueError = moneyInputError(
+        goal.revenueGoal,
+        'your revenue goal',
+        offerEconomicsLimits.revenueGoal,
+        goal.currency,
+      )
+
+      if (priceError) {
+        context.addIssue({ code: 'custom', path: ['price'], message: priceError })
+      }
+      if (revenueError) {
+        context.addIssue({ code: 'custom', path: ['revenueGoal'], message: revenueError })
+      }
+    })
+    .transform((value) => {
+      const goal = value as BeginnerGoalDraft
+      return {
+        ...value,
+        price: Number(goal.price),
+        revenueGoal: Number(goal.revenueGoal),
+      }
+    })
+
+export const beginnerGoalSchema = createBeginnerSchema({})
+
+export const beginnerReachSchema = createBeginnerSchema({
+  ...beginnerReachShape,
+})
+
+export const beginnerWorkshopSchema = createBeginnerSchema({
+  ...beginnerReachShape,
+  ...beginnerWorkshopShape,
+})
+
+export const beginnerAttendanceSchema = createBeginnerSchema({
+  ...beginnerReachShape,
+  ...beginnerWorkshopShape,
+  ...beginnerAttendanceShape,
+})
+
+export const beginnerSalesSchema = createBeginnerSchema({
+  ...beginnerReachShape,
+  ...beginnerWorkshopShape,
+  ...beginnerAttendanceShape,
+  ...beginnerSalesShape,
+})
+
+export const beginnerAnswerSchema = createBeginnerSchema({
+  ...beginnerReachShape,
+  ...beginnerWorkshopShape,
+  ...beginnerAttendanceShape,
+  ...beginnerSalesShape,
+  ...beginnerAnswerShape,
 })
 
 export type BeginnerAnswers = z.output<typeof beginnerAnswerSchema>

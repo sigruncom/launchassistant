@@ -168,7 +168,7 @@ export const composeStrategy = (
       sourceIds: ['LS-CTA-001'],
       tone: 'primary',
     })
-  } else if (inputs.currency !== 'EUR' && inputs.price > 1_000) {
+  } else if (inputs.currency !== 'EUR') {
     coachDecisions.push(
       'The source defines the discovery-call price threshold only in euros; no conversion rule is defined for this currency.',
     )

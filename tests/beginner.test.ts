@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { createBeginnerPlanCopy } from '../src/components/BeginnerResults'
 import { calculateLaunch } from '../src/domain/calculator'
 import {
   calculateOfferEconomics,
@@ -7,11 +8,13 @@ import {
 import {
   beginnerAnswerSchema,
   beginnerBlank,
+  beginnerGoalFallbackErrors,
   createEmailReachTrace,
   estimateOrganicRegistrationsFromEmailList,
   ORGANIC_SIGNUP_RATE_DEFAULT,
   toBeginnerLaunchInputs,
 } from '../src/domain/beginner'
+import { MORE_CURRENCIES_VALUE } from '../src/domain/currency'
 import { composeStrategy } from '../src/domain/strategy'
 import { appVariantHref, resolveAppVariant } from '../src/variants/appVariant'
 
@@ -38,6 +41,13 @@ const parsedAnswers = (overrides: Record<string, unknown> = {}) =>
   beginnerAnswerSchema.parse(answerDraft(overrides))
 
 describe('beginner variant', () => {
+  it('explains that More currencies still needs a specific selection', () => {
+    expect(beginnerGoalFallbackErrors(MORE_CURRENCIES_VALUE, null)).toEqual([
+      'Choose a currency from the international list.',
+      'Enter values in any two fields so the third can be calculated.',
+    ])
+  })
+
   it('uses the URL choice before the configured default', () => {
     expect(resolveAppVariant('beginner', 'complete')).toBe('beginner')
     expect(resolveAppVariant('complete', 'beginner')).toBe('complete')
@@ -65,9 +75,11 @@ describe('beginner variant', () => {
   })
 
   it('rejects values outside the safe bounds of the shared calculator', () => {
-    expect(beginnerAnswerSchema.safeParse(answerDraft({ price: '1000001' })).success).toBe(false)
     expect(
-      beginnerAnswerSchema.safeParse(answerDraft({ revenueGoal: '100000001' })).success,
+      beginnerAnswerSchema.safeParse(answerDraft({ price: '1000000000001' })).success,
+    ).toBe(false)
+    expect(
+      beginnerAnswerSchema.safeParse(answerDraft({ revenueGoal: '1000000000001' })).success,
     ).toBe(false)
     expect(
       beginnerAnswerSchema.safeParse(answerDraft({ emailListSize: '100000001' })).success,
@@ -83,6 +95,59 @@ describe('beginner variant', () => {
     expect(
       beginnerAnswerSchema.safeParse(answerDraft({ price: '9'.repeat(400) })).success,
     ).toBe(false)
+  })
+
+  it.each(['CAD', 'AUD', 'CHF', 'INR', 'JPY', 'KWD', 'BRL', 'ZAR', 'AED', 'SGD', 'VND'])(
+    'maps the international currency %s into the final plan',
+    (currency) => {
+      const inputs = toBeginnerLaunchInputs(parsedAnswers({ currency }))
+      expect(inputs.currency).toBe(currency)
+    },
+  )
+
+  it('keeps non-EUR methodology abstentions in the copied beginner plan', () => {
+    const answers = parsedAnswers({ currency: 'CAD' })
+    const inputs = toBeginnerLaunchInputs(answers)
+    const calculation = calculateLaunch(inputs)
+    const strategy = composeStrategy(inputs, calculation)
+    const trace = createEmailReachTrace(
+      answers.emailListSize,
+      answers.organicSignupRatePercent,
+    )
+    const copy = createBeginnerPlanCopy(inputs, calculation, strategy, trace)
+
+    expect(copy).toContain('Needs coach review:')
+    for (const decision of strategy.coachDecisions) {
+      expect(copy).toContain(`- ${decision}`)
+    }
+  })
+
+  it.each([
+    ['EUR', '997.01', '12000.01', true],
+    ['EUR', '997.001', '12000', false],
+    ['JPY', '997', '12000', true],
+    ['JPY', '997.1', '12000', false],
+    ['KWD', '997.001', '12000.001', true],
+    ['KWD', '997.0001', '12000', false],
+  ] as const)(
+    'validates %s amounts at the currency smallest-unit precision',
+    (currency, price, revenueGoal, expected) => {
+      expect(
+        beginnerAnswerSchema.safeParse(answerDraft({ currency, price, revenueGoal })).success,
+      ).toBe(expected)
+    },
+  )
+
+  it('accepts safe high-denomination VND amounts at the widened nominal limit', () => {
+    expect(
+      beginnerAnswerSchema.safeParse(
+        answerDraft({
+          currency: 'VND',
+          price: '1000000000000',
+          revenueGoal: '1000000000000',
+        }),
+      ).success,
+    ).toBe(true)
   })
 
   it('derives the supplied 50,000-list example without changing the funnel engine', () => {

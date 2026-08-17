@@ -13,7 +13,7 @@ describe('launch calculator', () => {
     const result = calculateLaunch(demoInputs)
 
     expect(result.calculatorVersion).toBe(CALCULATOR_VERSION)
-    expect(result.calculatorVersion).toBe('prototype-0.3.1')
+    expect(result.calculatorVersion).toBe('prototype-0.4.0')
     expect(result.salesConversionBasis).toBe(SALES_CONVERSION_BASIS)
     expect(result.salesConversionBasis).toBe('all-workshop-signups')
     expect(result.selected.conversionRatePercent).toBe(2)
@@ -23,11 +23,11 @@ describe('launch calculator', () => {
     expect(result.selected.projectedAttendeesExpected).toBe(86)
     expect(result.selected.groupJoinsExpected).toBe(390)
     expect(result.selected.paidRegistrationGap).toBe(470)
-    expect(result.selected.requiredAdSpendCents).toBe(94_000)
+    expect(result.selected.requiredAdSpendMinorUnits).toBe(94_000n)
     expect(result.selected.budgetSupportedPaidRegistrations).toBe(250)
     expect(result.selected.projectedRegistrations).toBe(430)
     expect(result.selected.projectedBuyers).toBe(8)
-    expect(result.selected.projectedRevenueCents).toBe(797_600)
+    expect(result.selected.projectedRevenueMinorUnits).toBe(797_600n)
     expect(result.selected.registrationGapAfterBudget).toBe(220)
     expect(
       result.selected.trace.find((item) => item.id === 'FORMULA-REGISTRATIONS-001'),
@@ -70,7 +70,7 @@ describe('launch calculator', () => {
 
     expect(high.buyersRequired).toBe(low.buyersRequired)
     expect(high.registrationsRequired).toBe(low.registrationsRequired)
-    expect(high.projectedRevenueCents).toBe(low.projectedRevenueCents)
+    expect(high.projectedRevenueMinorUnits).toBe(low.projectedRevenueMinorUnits)
     expect(high.attendeesExpected).toBeGreaterThan(low.attendeesExpected)
     expect(low.projectedBuyers).toBe(
       Math.floor(low.projectedRegistrations * (low.conversionRatePercent / 100)),
@@ -115,13 +115,60 @@ describe('launch calculator', () => {
     expect(() => calculateLaunch({ ...demoInputs, costPerLead: 0 })).toThrow()
   })
 
-  it('rejects prices below the supported one-cent precision', () => {
+  it('rejects prices below the selected currency precision', () => {
     expect(() => calculateLaunch({ ...demoInputs, price: 0.001 })).toThrow()
   })
 
-  it('rejects sub-cent price and revenue values instead of silently rounding them', () => {
+  it('rejects over-precise EUR values instead of silently rounding them', () => {
     expect(() => calculateLaunch({ ...demoInputs, price: 12.345 })).toThrow()
     expect(() => calculateLaunch({ ...demoInputs, revenueGoal: 0.015 })).toThrow()
+  })
+
+  it('uses whole minor units for zero-decimal currencies', () => {
+    const result = calculateLaunch({
+      ...demoInputs,
+      currency: 'JPY',
+      price: 1_000,
+      revenueGoal: 12_000,
+      costPerLead: 2,
+      adBudget: 500,
+    })
+
+    expect(result.minorUnitDigits).toBe(0)
+    expect(result.priceMinorUnits).toBe(1_000n)
+    expect(result.goalMinorUnits).toBe(12_000n)
+    expect(result.selected.buyersRequired).toBe(12)
+    expect(() => calculateLaunch({ ...demoInputs, currency: 'JPY', price: 997.5 })).toThrow()
+  })
+
+  it('retains three-decimal currency precision', () => {
+    const result = calculateLaunch({
+      ...demoInputs,
+      currency: 'KWD',
+      price: 923.077,
+      revenueGoal: 12_000,
+      costPerLead: 2.125,
+      adBudget: 500,
+    })
+
+    expect(result.minorUnitDigits).toBe(3)
+    expect(result.priceMinorUnits).toBe(923_077n)
+    expect(result.selected.buyersRequired).toBe(13)
+    expect(() => calculateLaunch({ ...demoInputs, currency: 'KWD', price: 1.2345 })).toThrow()
+  })
+
+  it('supports high-denomination plans within the widened safe limits', () => {
+    const result = calculateLaunch({
+      ...demoInputs,
+      currency: 'VND',
+      price: 25_000_000,
+      revenueGoal: 300_000_000,
+      costPerLead: 50_000,
+      adBudget: 10_000_000,
+    })
+
+    expect(result.priceMinorUnits).toBe(25_000_000n)
+    expect(result.selected.buyersRequired).toBe(12)
   })
 
   it('returns identical output for identical input', () => {
