@@ -188,12 +188,6 @@ export const composeStrategy = (
     )
   }
 
-  if (!inputs.facebookGroupFit && workshopFormat === 'Three-day workshop') {
-    coachDecisions.push(
-      'The source generally recommends a Facebook group for a three-day workshop, but you marked it as a poor audience fit.',
-    )
-  }
-
   const citedCards = new Set(
     [...recommendations, ...nextMoves].flatMap((recommendation) => recommendation.sourceIds),
   )

@@ -137,4 +137,17 @@ describe('document-only strategy composer', () => {
     ).toBe(false)
     expect(strategy.summary).toContain('workshop-signup-to-sale conversion')
   })
+
+  it('does not undermine a three-day workshop when no workshop group is planned', () => {
+    const strategy = strategyFor({
+      workshopDurationDays: 3,
+      workshopGroup: 'none',
+      groupJoinRatePercent: null,
+    })
+
+    expect(strategy.workshopFormat).toBe('Three-day workshop')
+    expect(
+      strategy.coachDecisions.some((decision) => decision.includes('Facebook group')),
+    ).toBe(false)
+  })
 })

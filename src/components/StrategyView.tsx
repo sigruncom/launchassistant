@@ -18,6 +18,11 @@ const makeSummary = (
   strategy: StrategyPlan,
 ) => {
   const scenario = calculation.selected
+  const groupLine = inputs.workshopGroup === 'none'
+    ? 'Workshop group: not planned'
+    : scenario.groupJoinsExpected === null
+      ? 'Estimated group joins: not estimated'
+      : `Estimated group joins: ${scenario.groupJoinsExpected}`
 
   return [
     `${inputs.offerName}: ${strategy.headline}`,
@@ -26,7 +31,7 @@ const makeSummary = (
     `Selected show-up rate: ${inputs.showUpRatePercent}%`,
     `Live attendees at target: ${scenario.attendeesExpected}`,
     `Live attendees from current reach: ${scenario.projectedAttendeesExpected}`,
-    `Estimated group joins: ${scenario.groupJoinsExpected}`,
+    groupLine,
     `Registration gap after current ad budget: ${scenario.registrationGapAfterBudget}`,
     '',
     'Next moves:',

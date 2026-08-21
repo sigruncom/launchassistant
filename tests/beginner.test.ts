@@ -33,7 +33,7 @@ const answerDraft = (overrides: Record<string, unknown> = {}) => ({
   groupJoinRatePercent: '60',
   recentResearch: 'not-yet',
   surveyResponses: '12',
-  facebookGroupFit: 'yes',
+  workshopGroup: 'facebook',
   ...overrides,
 })
 
@@ -64,11 +64,12 @@ describe('beginner variant', () => {
     expect(appVariantHref('complete')).toBe('?planner=complete')
   })
 
-  it('starts with only the visible email signup-rate default', () => {
+  it('starts with only the approved EUR and email signup-rate defaults', () => {
+    expect(beginnerBlank.currency).toBe('EUR')
     expect(beginnerBlank.organicSignupRatePercent).toBe(String(ORGANIC_SIGNUP_RATE_DEFAULT))
     expect(
       Object.entries(beginnerBlank)
-        .filter(([key]) => key !== 'organicSignupRatePercent')
+        .filter(([key]) => !['currency', 'organicSignupRatePercent'].includes(key))
         .every(([, value]) => value === ''),
     ).toBe(true)
     expect(beginnerAnswerSchema.safeParse(beginnerBlank).success).toBe(false)
@@ -241,11 +242,39 @@ describe('beginner variant', () => {
     expect(inputs.conversionRatePercent).toBe(1)
     expect(inputs.showUpRatePercent).toBe(30)
     expect(inputs.groupJoinRatePercent).toBe(70)
+    expect(inputs.workshopGroup).toBe('facebook')
     expect(inputs.workshopDurationDays).toBe(1)
     expect(inputs.audienceContext).toBe('b2b')
     expect(inputs.replayOffered).toBe(false)
     expect(inputs.showUpBonusPlanned).toBe(true)
     expect(inputs.organicRegistrations).toBe(180)
+  })
+
+  it('supports a launch with no workshop group without inventing a zero-percent rate', () => {
+    const answers = parsedAnswers({ workshopGroup: 'none', groupJoinRatePercent: '' })
+    const inputs = toBeginnerLaunchInputs(answers)
+    const calculation = calculateLaunch(inputs)
+    const strategy = composeStrategy(inputs, calculation)
+    const trace = createEmailReachTrace(
+      answers.emailListSize,
+      answers.organicSignupRatePercent,
+    )
+    const copy = createBeginnerPlanCopy(inputs, calculation, strategy, trace)
+
+    expect(inputs.workshopGroup).toBe('none')
+    expect(inputs.groupJoinRatePercent).toBeNull()
+    expect(calculation.selected.groupJoinsExpected).toBeNull()
+    expect(copy).toContain('no workshop group planned')
+    expect(copy).not.toContain('0% group')
+  })
+
+  it('leaves group joins unestimated when a group has no evidence-based rate', () => {
+    const inputs = toBeginnerLaunchInputs(
+      parsedAnswers({ workshopGroup: 'other', groupJoinRatePercent: '' }),
+    )
+
+    expect(inputs.groupJoinRatePercent).toBeNull()
+    expect(calculateLaunch(inputs).selected.groupJoinsExpected).toBeNull()
   })
 
   it('produces the expected starting plan at the selected 20% show-up rate', () => {

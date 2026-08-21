@@ -5,6 +5,7 @@ import {
   currencySchema,
   launchInputSchema,
   workshopDurationValues,
+  workshopGroupValues,
   type LaunchInputs,
 } from './schema'
 import {
@@ -68,7 +69,7 @@ export type BeginnerDraft = {
   groupJoinRatePercent: string
   recentResearch: BeginnerResearch | ''
   surveyResponses: string
-  facebookGroupFit: BeginnerYesNo | ''
+  workshopGroup: LaunchInputs['workshopGroup'] | ''
 }
 
 const requiredWholeNumber = (label: string, maximum: number) =>
@@ -100,6 +101,18 @@ const requiredPercent = (label: string, maximum: number, minimum = 1) =>
       { message: `Enter ${label} between ${minimum}% and ${maximum}%.` },
     )
     .transform(Number)
+
+const optionalPercent = (label: string, maximum: number, minimum = 1) =>
+  z
+    .string()
+    .trim()
+    .refine(
+      (value) =>
+        value === '' ||
+        (Number.isFinite(Number(value)) && Number(value) >= minimum && Number(value) <= maximum),
+      { message: `Enter ${label} between ${minimum}% and ${maximum}%, or leave it empty.` },
+    )
+    .transform((value) => (value === '' ? null : Number(value)))
 
 export const createEmailReachTrace = (
   emailListSize: number,
@@ -184,7 +197,6 @@ const beginnerSalesShape = {
     ],
     { error: 'Choose a 1%, 2% or 3% sales case.' },
   ),
-  groupJoinRatePercent: requiredPercent('an expected workshop-group join rate', 100),
 } satisfies z.ZodRawShape
 
 const beginnerAnswerShape = {
@@ -194,11 +206,10 @@ const beginnerAnswerShape = {
     })
     .transform((value) => value === 'yes'),
   surveyResponses: requiredWholeNumber('survey responses collected', 100_000),
-  facebookGroupFit: z
-    .enum(beginnerYesNoValues, {
-      error: 'Choose whether an online workshop group fits this audience.',
-    })
-    .transform((value) => value === 'yes'),
+  workshopGroup: z.enum(workshopGroupValues, {
+    error: 'Choose whether this launch will use a workshop group.',
+  }),
+  groupJoinRatePercent: optionalPercent('a workshop-group join rate', 100),
 } satisfies z.ZodRawShape
 
 type BeginnerGoalDraft = {
@@ -271,12 +282,20 @@ export const beginnerAnswerSchema = createBeginnerSchema({
   ...beginnerAttendanceShape,
   ...beginnerSalesShape,
   ...beginnerAnswerShape,
+}).superRefine((value, context) => {
+  if (value.workshopGroup === 'none' && value.groupJoinRatePercent !== null) {
+    context.addIssue({
+      code: 'custom',
+      path: ['groupJoinRatePercent'],
+      message: 'Leave the group join rate empty when no workshop group is planned.',
+    })
+  }
 })
 
 export type BeginnerAnswers = z.output<typeof beginnerAnswerSchema>
 
 export const beginnerBlank: BeginnerDraft = {
-  currency: '',
+  currency: 'EUR',
   price: '',
   spotsToSell: '',
   revenueGoal: '',
@@ -291,7 +310,7 @@ export const beginnerBlank: BeginnerDraft = {
   groupJoinRatePercent: '',
   recentResearch: '',
   surveyResponses: '',
-  facebookGroupFit: '',
+  workshopGroup: '',
 }
 
 export const toBeginnerLaunchInputs = (answers: BeginnerAnswers): LaunchInputs =>
@@ -313,7 +332,7 @@ export const toBeginnerLaunchInputs = (answers: BeginnerAnswers): LaunchInputs =
     showUpBonusPlanned: answers.showUpBonusPlanned,
     recentResearch: answers.recentResearch,
     surveyResponses: answers.surveyResponses,
-    facebookGroupFit: answers.facebookGroupFit,
+    workshopGroup: answers.workshopGroup,
     conversionRatePercent: answers.conversionRatePercent,
     showUpRatePercent: answers.showUpRatePercent,
     groupJoinRatePercent: answers.groupJoinRatePercent,

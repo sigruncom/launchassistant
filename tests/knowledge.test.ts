@@ -32,7 +32,25 @@ describe('knowledge provenance', () => {
       'SIGRUN-REACH-2026-08-11',
       'SIGRUN-CONVERSION-2026-08-16',
       'SIGRUN-REACH-2026-08-16',
+      'SIGRUN-PLANNER-2026-08-20',
     ])
+  })
+
+  it('records Sigrun’s compact-planner and optional-group correction conservatively', () => {
+    const card = knowledgeById['SIGRUN-PLANNER-2026-08-20']
+
+    expect(card.source).toEqual({
+      kind: 'method-owner-feedback',
+      author: 'Sigrun',
+      date: '2026-08-20',
+    })
+    expect(card.guidance).toContain('EUR as the default')
+    expect(card.guidance).toContain('currency selection secondary')
+    expect(card.guidance).toContain('above the fold')
+    expect(card.guidance).toContain('workshop group is optional')
+    expect(card.guidance).toContain('30%')
+    expect(card.guidance).toContain('not a universal default')
+    expect(card.guidance).toContain('no measured rate')
   })
 
   it('records the resolved conversion base without inventing reach bands', () => {

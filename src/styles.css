@@ -425,6 +425,57 @@ button:disabled {
   margin-top: 14px;
 }
 
+.currency-settings {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.currency-settings summary {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 580;
+  list-style: none;
+}
+
+.currency-settings summary::-webkit-details-marker {
+  display: none;
+}
+
+.currency-settings summary::before {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  margin-right: -7px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  content: '';
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 160ms ease;
+}
+
+.currency-settings[open] summary::before {
+  transform: rotate(225deg) translate(-2px, -1px);
+}
+
+.currency-settings summary span {
+  margin-left: auto;
+  color: var(--sigrun-red);
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.currency-settings > .field {
+  max-width: 320px;
+  margin-top: 16px;
+}
+
 .economics-builder {
   display: grid;
   gap: 24px;
@@ -1512,23 +1563,51 @@ button:disabled {
   text-align: right;
 }
 
+.beginner-planner {
+  width: min(1200px, calc(100% - 48px));
+  margin-inline: auto;
+}
+
+.beginner-planner__intro {
+  min-width: 0;
+}
+
 .beginner-hero {
-  padding-bottom: 54px;
+  position: relative;
+}
+
+.beginner-hero::after {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 96px;
+  height: 6px;
+  background: var(--sigrun-red);
+  content: '';
 }
 
 .beginner-hero h1 {
-  max-width: 760px;
+  max-width: 500px;
+  margin: 0;
+  font-size: clamp(42px, 4.5vw, 62px);
+  font-weight: 340;
+  letter-spacing: -0.055em;
+  line-height: 0.96;
 }
 
 .beginner-hero .hero-copy {
-  max-width: 690px;
+  max-width: 430px;
+  margin: 22px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 .beginner-trust {
   display: flex;
   flex-wrap: wrap;
   gap: 0;
-  margin: 34px 0 0;
+  margin: 24px 0 0;
   padding: 0;
   color: var(--muted);
   font-size: 11px;
@@ -1551,37 +1630,176 @@ button:disabled {
   grid-template-columns: repeat(3, 1fr);
 }
 
-.beginner-workspace,
 .beginner-results-main {
   width: min(1200px, calc(100% - 48px));
   margin-inline: auto;
 }
 
 .beginner-workspace {
-  padding: 72px 0 112px;
+  width: 100%;
+  margin: 0;
+  padding: 40px 0 80px;
 }
 
 .beginner-input-card {
   max-width: 790px;
-  min-height: 630px;
+  min-height: 560px;
   margin-inline: auto;
-  padding: 58px 64px;
+  padding: 40px 46px;
   border-radius: 0 var(--radius-section) var(--radius-section) var(--radius-section);
   background: var(--sigrun-white);
   box-shadow: inset 0 0 0 1px var(--line);
 }
 
 .beginner-input-card .step-heading {
-  margin-bottom: 42px;
+  margin-bottom: 28px;
 }
 
 .beginner-currency-field {
-  max-width: 220px;
+  max-width: 320px;
 }
 
 .beginner-form-actions {
-  padding-top: 8px;
+  margin-top: 24px;
+  padding-top: 16px;
   border-top: 1px solid var(--line);
+}
+
+@media (min-width: 1100px) and (min-height: 720px) {
+  .beginner-shell .site-header {
+    min-height: 72px;
+  }
+
+  .beginner-planner {
+    display: grid;
+    min-height: calc(100svh - 110px);
+    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+    gap: clamp(40px, 5vw, 64px);
+    align-items: center;
+  }
+
+  .beginner-planner__intro,
+  .beginner-workspace {
+    height: min(700px, calc(100svh - 150px));
+  }
+
+  .beginner-planner__intro {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .beginner-hero {
+    padding: 20px 0 28px;
+  }
+
+  .beginner-planner .guided-progress {
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-top: auto;
+    padding: 18px 0;
+  }
+
+  .beginner-workspace {
+    width: auto;
+    margin: 0;
+    padding: 0;
+  }
+
+  .beginner-input-card {
+    display: grid;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    padding: 34px 40px;
+  }
+
+  .beginner-input-card .step-heading {
+    margin-bottom: 22px;
+  }
+
+  .beginner-input-card .step-heading h2 {
+    font-size: clamp(30px, 3vw, 42px);
+  }
+
+  .beginner-step-body {
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 6px;
+    scrollbar-gutter: stable;
+  }
+
+  .beginner-input-card .form-stack {
+    gap: 20px;
+  }
+
+  .beginner-input-card .economics-builder,
+  .beginner-input-card .email-reach-builder {
+    gap: 18px;
+    padding: 20px;
+  }
+
+  .beginner-input-card .email-reach-output {
+    padding: 16px 18px;
+  }
+
+  .beginner-input-card[data-step='4'] .form-stack {
+    grid-template-columns: minmax(0, 1.15fr) minmax(240px, 0.85fr);
+    align-items: start;
+  }
+
+  .beginner-input-card[data-step='4'] .rate-fieldset {
+    grid-row: 1 / span 2;
+  }
+
+  .beginner-input-card[data-step='6'] .form-stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 18px;
+  }
+
+  .beginner-input-card[data-step='6'] .form-stack > :first-child,
+  .beginner-input-card[data-step='6'] .form-stack > :nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .beginner-input-card[data-step='6'] .form-stack > :nth-child(2) {
+    grid-column: 1;
+  }
+
+  .beginner-input-card[data-step='6'] .form-stack > :nth-child(4) {
+    grid-row: 2;
+    grid-column: 2;
+  }
+
+  .beginner-input-card[data-step='6'] .choice-card {
+    min-height: 72px;
+    padding: 12px 14px;
+  }
+
+  .beginner-form-actions {
+    margin-top: 18px;
+  }
+}
+
+@media (max-width: 1099px), (max-height: 719px) {
+  .beginner-planner__intro {
+    padding-top: 48px;
+  }
+
+  .beginner-hero {
+    padding-bottom: 32px;
+  }
+
+  .beginner-planner .guided-progress {
+    width: 100%;
+    margin-top: 34px;
+  }
+
+  .beginner-step-body {
+    overflow: visible;
+  }
 }
 
 .beginner-defaults-note {
@@ -1923,7 +2141,7 @@ button:disabled {
   .workspace,
   .strategy-main,
   .site-footer,
-  .beginner-workspace,
+  .beginner-planner,
   .beginner-results-main {
     width: min(100% - 32px, 1200px);
   }
@@ -2017,7 +2235,6 @@ button:disabled {
 
   .workspace,
   .strategy-main,
-  .beginner-workspace,
   .beginner-results-main {
     padding-top: 48px;
     padding-bottom: 80px;
@@ -2026,6 +2243,22 @@ button:disabled {
   .beginner-trust {
     display: grid;
     gap: 8px;
+  }
+
+  .beginner-planner__intro {
+    padding-top: 36px;
+  }
+
+  .beginner-hero h1 {
+    font-size: clamp(38px, 12vw, 54px);
+  }
+
+  .beginner-hero .hero-copy {
+    font-size: 14px;
+  }
+
+  .beginner-workspace {
+    padding: 36px 0 72px;
   }
 
   .beginner-trust li,

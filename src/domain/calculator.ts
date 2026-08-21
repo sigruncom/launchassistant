@@ -1,7 +1,7 @@
 import { launchInputSchema, type LaunchInputs } from './schema'
 import { currencyMinorUnitDigits, currencyMinorUnitScale } from './currency'
 
-export const CALCULATOR_VERSION = 'prototype-0.4.0'
+export const CALCULATOR_VERSION = 'prototype-0.5.0'
 export const SALES_CONVERSION_BASIS = 'all-workshop-signups' as const
 
 export type ScenarioKey = 'cautious' | 'planning' | 'benchmark'
@@ -22,7 +22,7 @@ export type LaunchScenario = {
   registrationsRequired: number
   attendeesExpected: number
   projectedAttendeesExpected: number
-  groupJoinsExpected: number
+  groupJoinsExpected: number | null
   paidRegistrationGap: number
   requiredAdSpendMinorUnits: bigint
   budgetSupportedPaidRegistrations: number
@@ -90,9 +90,10 @@ export const calculateLaunch = (rawInputs: LaunchInputs): LaunchCalculation => {
     const attendeesExpected = Math.round(
       registrationsRequired * (inputs.showUpRatePercent / 100),
     )
-    const groupJoinsExpected = Math.round(
-      registrationsRequired * (inputs.groupJoinRatePercent / 100),
-    )
+    const groupJoinsExpected =
+      inputs.workshopGroup !== 'none' && inputs.groupJoinRatePercent !== null
+        ? Math.round(registrationsRequired * (inputs.groupJoinRatePercent / 100))
+        : null
     const paidRegistrationGap = Math.max(
       0,
       registrationsRequired - inputs.organicRegistrations,

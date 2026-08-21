@@ -14,6 +14,7 @@ export const offerTypeValues = ['one-to-one', 'group', 'course', 'undecided'] as
 export const audienceContextValues = ['b2b', 'hobby', 'other'] as const
 export const workshopDurationValues = [1, 3] as const
 export const conversionValues = [1, 2, 3] as const
+export const workshopGroupValues = ['none', 'facebook', 'other'] as const
 
 export const currencySchema = z.preprocess(
   (value) => typeof value === 'string' ? normalizeCurrencyCode(value) : value,
@@ -56,14 +57,14 @@ export const launchInputSchema = z
     showUpBonusPlanned: z.boolean(),
     recentResearch: z.boolean(),
     surveyResponses: z.number().int().nonnegative().max(100_000),
-    facebookGroupFit: z.boolean(),
+    workshopGroup: z.enum(workshopGroupValues),
     conversionRatePercent: z.union([
       z.literal(conversionValues[0]),
       z.literal(conversionValues[1]),
       z.literal(conversionValues[2]),
     ]),
     showUpRatePercent: z.number().finite().min(1).max(100),
-    groupJoinRatePercent: z.number().finite().min(1).max(100),
+    groupJoinRatePercent: z.number().finite().min(1).max(100).nullable(),
   })
   .superRefine((value, context) => {
     const precisionFields = [
@@ -90,6 +91,14 @@ export const launchInputSchema = z
         message: 'Add a cost per lead when an ad budget is planned.',
       })
     }
+
+    if (value.workshopGroup === 'none' && value.groupJoinRatePercent !== null) {
+      context.addIssue({
+        code: 'custom',
+        path: ['groupJoinRatePercent'],
+        message: 'Leave the group join rate empty when no workshop group is planned.',
+      })
+    }
   })
 
 export type LaunchInputs = z.infer<typeof launchInputSchema>
@@ -109,7 +118,7 @@ export const demoInputs: LaunchInputs = {
   showUpBonusPlanned: false,
   recentResearch: false,
   surveyResponses: 12,
-  facebookGroupFit: true,
+  workshopGroup: 'facebook',
   conversionRatePercent: 2,
   showUpRatePercent: 20,
   groupJoinRatePercent: 60,

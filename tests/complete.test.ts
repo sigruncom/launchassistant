@@ -24,7 +24,7 @@ const completeDraft = (overrides: Partial<CompleteDraft> = {}): CompleteDraft =>
   adBudget: '',
   recentResearch: 'not-yet',
   surveyResponses: '12',
-  facebookGroupFit: 'yes',
+  workshopGroup: 'facebook',
   ...overrides,
 })
 
@@ -34,8 +34,13 @@ const economics = calculateOfferEconomics(
 )
 
 describe('complete planner draft', () => {
-  it('starts with every participant answer blank', () => {
-    expect(Object.values(completeBlank).every((value) => value === '')).toBe(true)
+  it('starts with EUR as the only participant-answer default', () => {
+    expect(completeBlank.currency).toBe('EUR')
+    expect(
+      Object.entries(completeBlank)
+        .filter(([key]) => key !== 'currency')
+        .every(([, value]) => value === ''),
+    ).toBe(true)
     expect(parseCompleteDraft(completeBlank, null)).toBeNull()
   })
 
@@ -68,6 +73,33 @@ describe('complete planner draft', () => {
     expect(parsed.data.showUpRatePercent).toBe(30)
     expect(parsed.data.conversionRatePercent).toBe(1)
     expect(parsed.data.groupJoinRatePercent).toBe(70)
+  })
+
+  it('supports no workshop group without treating not-applicable as zero percent', () => {
+    const draft = completeDraft({ workshopGroup: 'none', groupJoinRatePercent: '' })
+    const parsed = parseCompleteDraft(draft, economics)
+
+    expect(completeStepErrors(5, draft, economics)).toEqual([])
+    expect(parsed?.success).toBe(true)
+    if (!parsed?.success) throw new Error('Expected a no-group complete draft.')
+    expect(parsed.data.workshopGroup).toBe('none')
+    expect(parsed.data.groupJoinRatePercent).toBeNull()
+  })
+
+  it('accepts a planned group with an unknown rate or a supplied 30% reference', () => {
+    const unknown = completeDraft({ workshopGroup: 'other', groupJoinRatePercent: '' })
+    const supplied = completeDraft({ workshopGroup: 'facebook', groupJoinRatePercent: '30' })
+    const parsedUnknown = parseCompleteDraft(unknown, economics)
+    const parsedSupplied = parseCompleteDraft(supplied, economics)
+
+    expect(completeStepErrors(5, unknown, economics)).toEqual([])
+    expect(parsedUnknown?.success).toBe(true)
+    expect(parsedSupplied?.success).toBe(true)
+    if (!parsedUnknown?.success || !parsedSupplied?.success) {
+      throw new Error('Expected planned-group drafts to parse.')
+    }
+    expect(parsedUnknown.data.groupJoinRatePercent).toBeNull()
+    expect(parsedSupplied.data.groupJoinRatePercent).toBe(30)
   })
 
   it('accepts an international currency and rejects an unsupported code on its own step', () => {

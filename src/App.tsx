@@ -72,14 +72,22 @@ function App() {
     setDraft((current) => ({ ...current, [key]: value }))
   }
 
+  const updateWorkshopGroup = (value: CompleteDraft['workshopGroup']) => {
+    setDraft((current) => ({
+      ...current,
+      workshopGroup: value,
+      groupJoinRatePercent: value === 'none' ? '' : current.groupJoinRatePercent,
+    }))
+  }
+
   const focusStepHeading = (step: StepIndex) => {
     window.requestAnimationFrame(() => {
       if (step === 8) {
-        resultMainRef.current?.focus()
+        resultMainRef.current?.focus({ preventScroll: true })
         return
       }
 
-      stepHeadingRef.current?.focus()
+      stepHeadingRef.current?.focus({ preventScroll: true })
     })
   }
 
@@ -97,7 +105,7 @@ function App() {
           nextErrors.length > 0 ? nextErrors : ['Complete the required answers before continuing.'],
         )
         setAnnouncement('Complete the highlighted questions before continuing.')
-        window.requestAnimationFrame(() => errorSummaryRef.current?.focus())
+        window.requestAnimationFrame(() => errorSummaryRef.current?.focus({ preventScroll: true }))
         return
       }
     }
@@ -105,7 +113,6 @@ function App() {
     setErrors([])
     setActiveStep(step)
     setAnnouncement(`Step ${step + 1} of ${steps.length}: ${steps[step].short}`)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
     focusStepHeading(step)
   }
 
@@ -143,7 +150,7 @@ function App() {
           numbers can support<span className="red-dot">.</span>
         </h1>
         <p className="hero-copy">
-          Work through one topic at a time. Every answer starts blank, and the calculation appears
+          Work through one topic at a time. EUR is selected by default, and the calculation appears
           only after you finish the inputs.
         </p>
       </div>
@@ -202,12 +209,6 @@ function App() {
 
             {activeStep === 1 ? (
               <div className="form-stack">
-                <CurrencySelect
-                  className="economics-currency-field"
-                  id="currency"
-                  value={draft.currency}
-                  onChange={(value) => update('currency', value)}
-                />
                 <OfferEconomicsFields
                   calculatedField={economics.calculatedField}
                   currency={draft.currency || undefined}
@@ -219,6 +220,17 @@ function App() {
                   variant="complete"
                   onChange={economics.update}
                 />
+                <details className="currency-settings">
+                  <summary>
+                    Currency: {draft.currency || 'EUR'} <span>Change currency</span>
+                  </summary>
+                  <CurrencySelect
+                    className="economics-currency-field"
+                    id="currency"
+                    value={draft.currency}
+                    onChange={(value) => update('currency', value)}
+                  />
+                </details>
               </div>
             ) : null}
 
@@ -307,17 +319,30 @@ function App() {
                   ]}
                   hint="Applied to all workshop signups, whether or not they attend live. The outline says 1–2% is possible and describes 3% as average."
                 />
-                <DraftNumberField
-                  id="group-join-rate"
-                  label="Expected workshop-group join rate"
-                  hint="The outline gives 60% as the general example and 70% as a historical example."
-                  placeholder="Enter a rate"
-                  suffix="%"
-                  min={1}
-                  max={100}
-                  value={draft.groupJoinRatePercent}
-                  onChange={(value) => update('groupJoinRatePercent', value)}
+                <ChoiceGroup<CompleteDraft['workshopGroup']>
+                  legend="Will this launch use a workshop group?"
+                  name="complete-workshop-group"
+                  value={draft.workshopGroup}
+                  onChange={updateWorkshopGroup}
+                  choices={[
+                    { value: 'none', label: 'No group', detail: 'Skip a workshop group' },
+                    { value: 'facebook', label: 'Facebook', detail: 'Use a Facebook group' },
+                    { value: 'other', label: 'Another platform', detail: 'Use a different community space' },
+                  ]}
                 />
+                {draft.workshopGroup && draft.workshopGroup !== 'none' ? (
+                  <DraftNumberField
+                    id="group-join-rate"
+                    label="Expected workshop-group join rate (optional)"
+                    hint="Use your own evidence if you have it. Around 30% is a recent observed rate, not a universal default."
+                    placeholder="Leave empty if unknown"
+                    suffix="%"
+                    min={1}
+                    max={100}
+                    value={draft.groupJoinRatePercent}
+                    onChange={(value) => update('groupJoinRatePercent', value)}
+                  />
+                ) : null}
               </div>
             ) : null}
 
@@ -386,17 +411,6 @@ function App() {
                     onChange={(value) => update('surveyResponses', value)}
                   />
                 ) : null}
-                <ChoiceGroup<YesNoAnswer | ''>
-                  legend="Would an online workshop group suit this audience?"
-                  name="complete-group-fit"
-                  value={draft.facebookGroupFit}
-                  onChange={(value) => update('facebookGroupFit', value)}
-                  columns={2}
-                  choices={[
-                    { value: 'yes', label: 'Yes', detail: 'A community space fits' },
-                    { value: 'no', label: 'No', detail: 'Use a different live space' },
-                  ]}
-                />
               </div>
             ) : null}
 

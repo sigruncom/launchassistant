@@ -35,13 +35,13 @@ export type CompleteDraft = {
   adBudget: string
   recentResearch: ResearchAnswer | ''
   surveyResponses: string
-  facebookGroupFit: YesNoAnswer | ''
+  workshopGroup: LaunchInputs['workshopGroup'] | ''
 }
 
 export const completeBlank: CompleteDraft = {
   offerName: '',
   offerType: '',
-  currency: '',
+  currency: 'EUR',
   organicRegistrations: '',
   audienceContext: '',
   workshopDurationDays: '',
@@ -55,7 +55,7 @@ export const completeBlank: CompleteDraft = {
   adBudget: '',
   recentResearch: '',
   surveyResponses: '',
-  facebookGroupFit: '',
+  workshopGroup: '',
 }
 
 const wholeNumberError = (
@@ -128,7 +128,13 @@ export const completeStepErrors = (
     case 5:
       return compact([
         draft.conversionRatePercent ? null : 'Choose a 1%, 2% or 3% sales case.',
-        percentError(draft.groupJoinRatePercent, 'a workshop-group join rate', 100),
+        draft.workshopGroup ? null : 'Choose whether this launch will use a workshop group.',
+        draft.workshopGroup !== 'none' && draft.groupJoinRatePercent.trim()
+          ? percentError(draft.groupJoinRatePercent, 'a workshop-group join rate', 100)
+          : null,
+        draft.workshopGroup === 'none' && draft.groupJoinRatePercent.trim()
+          ? 'Leave the group join rate empty when no workshop group is planned.'
+          : null,
       ])
     case 6:
       return compact([
@@ -163,9 +169,6 @@ export const completeStepErrors = (
         draft.recentResearch === 'not-yet'
           ? wholeNumberError(draft.surveyResponses, 'survey responses collected', 100_000)
           : null,
-        draft.facebookGroupFit
-          ? null
-          : 'Choose whether an online workshop group fits this audience.',
       ])
     default:
       return []
@@ -193,9 +196,12 @@ export const parseCompleteDraft = (
     showUpBonusPlanned: draft.showUpBonusPlanned === 'yes',
     recentResearch: draft.recentResearch === 'yes',
     surveyResponses: draft.recentResearch === 'not-yet' ? Number(draft.surveyResponses) : 0,
-    facebookGroupFit: draft.facebookGroupFit === 'yes',
+    workshopGroup: draft.workshopGroup,
     conversionRatePercent: draft.conversionRatePercent,
     showUpRatePercent: Number(draft.showUpRatePercent),
-    groupJoinRatePercent: Number(draft.groupJoinRatePercent),
+    groupJoinRatePercent:
+      draft.workshopGroup !== 'none' && draft.groupJoinRatePercent.trim()
+        ? Number(draft.groupJoinRatePercent)
+        : null,
   })
 }

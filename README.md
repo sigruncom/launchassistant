@@ -6,7 +6,7 @@ Private product repository for Sigrun's launch calculator and methodology-ground
 
 The repository contains one disposable internal demo with two selectable planner experiences for validating the Launch & Sell methodology before production architecture is introduced:
 
-- **Beginner:** six short input steps with one visible, editable 10% email-registration starting rate and no hidden assumptions.
+- **Beginner:** six short input steps in a compact laptop-height planner, with EUR and an editable 10% email-registration rate as the visible starting values.
 - **Complete:** eight topic-based input steps followed by the full methodology-review surface.
 
 The prototype:

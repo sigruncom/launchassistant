@@ -147,6 +147,14 @@ export const knowledgeCards = [
     source: { kind: 'method-owner-feedback', author: 'Sigrun', date: '2026-08-16' },
     kind: 'benchmark',
   },
+  {
+    id: 'SIGRUN-PLANNER-2026-08-20',
+    title: 'Keep the planner compact and workshop groups optional',
+    guidance:
+      'Use EUR as the default and keep currency selection secondary. Keep the current calculator step fully visible above the fold on a laptop and stable between steps. A workshop group is optional. When one is used, 30% is a recent observed join rate, not a universal default; non-Facebook groups may be lower, and some launches have no measured rate.',
+    source: { kind: 'method-owner-feedback', author: 'Sigrun', date: '2026-08-20' },
+    kind: 'decision',
+  },
 ] as const satisfies readonly KnowledgeCard[]
 
 export type KnowledgeCardId = (typeof knowledgeCards)[number]['id']

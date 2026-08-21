@@ -18,6 +18,12 @@ type BeginnerResultsProps = {
 
 type BeginnerMove = Pick<Recommendation, 'id' | 'title' | 'body' | 'sourceIds'>
 
+const workshopGroupSummary = (inputs: LaunchInputs) => {
+  if (inputs.workshopGroup === 'none') return 'no workshop group planned'
+  if (inputs.groupJoinRatePercent === null) return 'workshop-group joining not estimated'
+  return `${inputs.groupJoinRatePercent}% workshop-group joining`
+}
+
 const makeBeginnerMoves = (strategy: StrategyPlan): BeginnerMove[] => {
   const moves: BeginnerMove[] = []
   const researchMove = strategy.nextMoves.find((move) => move.id.startsWith('MOVE-RESEARCH'))
@@ -85,7 +91,7 @@ export const createBeginnerPlanCopy = (
         ]
       : []),
     '',
-    `Selected inputs: ${inputs.conversionRatePercent}% sales conversion, ${inputs.showUpRatePercent}% live attendance, ${inputs.groupJoinRatePercent}% group joining, ${inputs.workshopDurationDays}-day workshop.`,
+    `Selected inputs: ${inputs.conversionRatePercent}% sales conversion, ${inputs.showUpRatePercent}% live attendance, ${workshopGroupSummary(inputs)}, ${inputs.workshopDurationDays}-day workshop.`,
   ].join('\n')
 }
 
@@ -219,7 +225,7 @@ export function BeginnerResults({
             Your email reach estimate uses a list of {emailListSize.toLocaleString()} and a{' '}
             {organicSignupRatePercent}% signup rate. You also selected{' '}
             {inputs.conversionRatePercent}% sales conversion, {inputs.showUpRatePercent}% live
-            attendance, {inputs.groupJoinRatePercent}% group joining and a{' '}
+            attendance, {workshopGroupSummary(inputs)} and a{' '}
             {inputs.workshopDurationDays}-day workshop.
           </p>
           <div className="source-list">
@@ -230,6 +236,7 @@ export function BeginnerResults({
             <SourceChip sourceId="SIGRUN-WORKSHOP-2026-08-09" />
             <SourceChip sourceId="SIGRUN-REACH-2026-08-11" />
             <SourceChip sourceId="SIGRUN-REACH-2026-08-16" />
+            <SourceChip sourceId="SIGRUN-PLANNER-2026-08-20" />
             <SourceChip sourceId="LS-ADS-001" />
           </div>
           <p>

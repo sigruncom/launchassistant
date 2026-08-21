@@ -101,14 +101,22 @@ function BeginnerApp() {
     setDraft((current) => ({ ...current, [key]: value }))
   }
 
+  const updateWorkshopGroup = (value: BeginnerDraft['workshopGroup']) => {
+    setDraft((current) => ({
+      ...current,
+      workshopGroup: value,
+      groupJoinRatePercent: value === 'none' ? '' : current.groupJoinRatePercent,
+    }))
+  }
+
   const focusStepHeading = (step: StepIndex) => {
     window.requestAnimationFrame(() => {
       if (step === 6) {
-        resultMainRef.current?.focus()
+        resultMainRef.current?.focus({ preventScroll: true })
         return
       }
 
-      stepHeadingRef.current?.focus()
+      stepHeadingRef.current?.focus({ preventScroll: true })
     })
   }
 
@@ -121,15 +129,16 @@ function BeginnerApp() {
       if (!currentValidation?.success) {
         setShowErrors(true)
         setAnnouncement('Complete the highlighted questions before continuing.')
-        window.requestAnimationFrame(() => errorSummaryRef.current?.focus())
+        window.requestAnimationFrame(() => errorSummaryRef.current?.focus({ preventScroll: true }))
         return
       }
     }
 
     setShowErrors(false)
     setActiveStep(step)
-    setAnnouncement(`Step ${step + 1} of ${steps.length}: ${steps[step].short}`)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setAnnouncement(
+      step === 6 ? 'Your launch plan is ready.' : `Step ${step + 1} of 6: ${steps[step].short}`,
+    )
     focusStepHeading(step)
   }
 
@@ -156,7 +165,7 @@ function BeginnerApp() {
     : []
 
   return (
-    <div className="app-shell beginner-shell">
+    <div className="app-shell beginner-shell" id="top">
       <div className="prototype-banner" role="note">
         <span>Beginner prototype</span>
         <p>A guided planning path · nothing you enter is saved</p>
@@ -169,29 +178,36 @@ function BeginnerApp() {
         <VariantNavigation activeVariant="beginner" />
       </header>
 
-      <div className="hero beginner-hero" id="top">
-        <p className="hero-kicker">Launch & Sell · Guided path</p>
-        <h1>
-          One clear topic
-          <br />
-          at a time<span className="red-dot">.</span>
-        </h1>
-        <p className="hero-copy">
-          Each screen asks only what is needed for the next part of the calculation. The only
-          starting value is a visible, editable 10% email-registration rate from Sigrun.
-        </p>
-        <ul className="beginner-trust" aria-label="Beginner planner details">
-          <li>Six short input steps</li>
-          <li>No hidden assumptions</li>
-          <li>No model call</li>
-        </ul>
-      </div>
-
-      <StepProgress activeStep={activeStep} labels={steps.map((step) => step.short)} />
-
       {activeStep < 6 ? (
-        <main className="beginner-workspace">
-          <section className="beginner-input-card" aria-labelledby="beginner-step-title">
+        <div className="beginner-planner">
+          <aside className="beginner-planner__intro" aria-labelledby="beginner-intro-title">
+            <div className="beginner-hero">
+              <p className="hero-kicker">Launch & Sell · Guided path</p>
+              <h1 id="beginner-intro-title">
+                Build your launch plan<span className="red-dot">.</span>
+              </h1>
+              <p className="hero-copy">
+                Six short steps turn your inputs into one source-backed starting plan. EUR is
+                selected by default, and nothing you enter is saved.
+              </p>
+              <ul className="beginner-trust" aria-label="Beginner planner details">
+                <li>Six input steps</li>
+                <li>Editable assumptions</li>
+                <li>No model call</li>
+              </ul>
+            </div>
+            <StepProgress
+              activeStep={activeStep}
+              labels={steps.slice(0, 6).map((step) => step.short)}
+            />
+          </aside>
+
+          <main className="beginner-workspace">
+          <section
+            className="beginner-input-card"
+            data-step={activeStep + 1}
+            aria-labelledby="beginner-step-title"
+          >
             <div className="step-heading">
               <p className="step-kicker">
                 {activeStep + 1} / 6 — {steps[activeStep].kicker}
@@ -201,6 +217,7 @@ function BeginnerApp() {
               </h2>
             </div>
 
+            <div className="beginner-step-body">
             {errors.length > 0 ? (
               <div className="error-summary" role="alert" tabIndex={-1} ref={errorSummaryRef}>
                 <strong>A few answers are still needed:</strong>
@@ -210,13 +227,6 @@ function BeginnerApp() {
 
             {activeStep === 0 ? (
               <div className="form-stack">
-                <CurrencySelect
-                  className="beginner-currency-field"
-                  id="beginner-currency"
-                  value={draft.currency}
-                  onChange={(value) => update('currency', value)}
-                />
-
                 <OfferEconomicsFields
                   calculatedField={economics.calculatedField}
                   currency={draft.currency || undefined}
@@ -228,6 +238,17 @@ function BeginnerApp() {
                   variant="beginner"
                   onChange={economics.update}
                 />
+                <details className="currency-settings">
+                  <summary>
+                    Currency: {draft.currency || 'EUR'} <span>Change currency</span>
+                  </summary>
+                  <CurrencySelect
+                    className="beginner-currency-field"
+                    id="beginner-currency"
+                    value={draft.currency}
+                    onChange={(value) => update('currency', value)}
+                  />
+                </details>
               </div>
             ) : null}
 
@@ -316,17 +337,6 @@ function BeginnerApp() {
                   ]}
                   hint="Applied to all workshop signups, whether or not they attend live."
                 />
-                <DraftNumberField
-                  id="beginner-group-join-rate"
-                  label="Expected workshop-group join rate"
-                  hint="The outline gives 60% as the general example and 70% as a historical example."
-                  placeholder="Enter a rate"
-                  suffix="%"
-                  min={1}
-                  max={100}
-                  value={draft.groupJoinRatePercent}
-                  onChange={(value) => update('groupJoinRatePercent', value)}
-                />
               </div>
             ) : null}
 
@@ -352,19 +362,34 @@ function BeginnerApp() {
                   value={draft.surveyResponses}
                   onChange={(value) => update('surveyResponses', value)}
                 />
-                <ChoiceGroup<BeginnerYesNo | ''>
-                  legend="Would an online workshop group suit this audience?"
-                  name="beginner-group-fit"
-                  value={draft.facebookGroupFit}
-                  onChange={(value) => update('facebookGroupFit', value)}
-                  columns={2}
+                <ChoiceGroup<BeginnerDraft['workshopGroup']>
+                  legend="Will this launch use a workshop group?"
+                  name="beginner-workshop-group"
+                  value={draft.workshopGroup}
+                  onChange={updateWorkshopGroup}
                   choices={[
-                    { value: 'yes', label: 'Yes', detail: 'A community space fits' },
-                    { value: 'no', label: 'No', detail: 'Use a different live space' },
+                    { value: 'none', label: 'No group', detail: 'Skip a workshop group' },
+                    { value: 'facebook', label: 'Facebook', detail: 'Use a Facebook group' },
+                    { value: 'other', label: 'Another platform', detail: 'Use a different community space' },
                   ]}
                 />
+                {draft.workshopGroup && draft.workshopGroup !== 'none' ? (
+                  <DraftNumberField
+                    id="beginner-group-join-rate"
+                    label="Expected workshop-group join rate (optional)"
+                    hint="Use your own evidence if you have it. Around 30% is a recent observed rate, not a universal default."
+                    placeholder="Leave empty if unknown"
+                    suffix="%"
+                    min={1}
+                    max={100}
+                    value={draft.groupJoinRatePercent}
+                    onChange={(value) => update('groupJoinRatePercent', value)}
+                  />
+                ) : null}
               </div>
             ) : null}
+
+            </div>
 
             <div className="form-actions beginner-form-actions">
               {activeStep > 0 ? (
@@ -386,7 +411,8 @@ function BeginnerApp() {
               </button>
             </div>
           </section>
-        </main>
+          </main>
+        </div>
       ) : null}
 
       {activeStep === 6 && inputs && calculation && strategy && emailReachTrace ? (
@@ -406,7 +432,7 @@ function BeginnerApp() {
 
       <footer className="site-footer">
         <div className="wordmark wordmark--footer">SIGRUN</div>
-        <p>Guided methodology prototype · one visible planning default · nothing is saved</p>
+        <p>Guided methodology prototype · visible editable defaults · nothing is saved</p>
         <span>Calculator {calculation?.calculatorVersion ?? 'not started'}</span>
       </footer>
     </div>

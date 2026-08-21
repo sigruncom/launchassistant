@@ -13,7 +13,7 @@ describe('launch calculator', () => {
     const result = calculateLaunch(demoInputs)
 
     expect(result.calculatorVersion).toBe(CALCULATOR_VERSION)
-    expect(result.calculatorVersion).toBe('prototype-0.4.0')
+    expect(result.calculatorVersion).toBe('prototype-0.5.0')
     expect(result.salesConversionBasis).toBe(SALES_CONVERSION_BASIS)
     expect(result.salesConversionBasis).toBe('all-workshop-signups')
     expect(result.selected.conversionRatePercent).toBe(2)
@@ -78,6 +78,28 @@ describe('launch calculator', () => {
     expect(low.projectedBuyers).not.toBe(
       Math.floor(low.projectedAttendeesExpected * (low.conversionRatePercent / 100)),
     )
+  })
+
+  it('does not estimate group joins without both a group and a supplied rate', () => {
+    const noGroup = calculateLaunch({
+      ...demoInputs,
+      workshopGroup: 'none',
+      groupJoinRatePercent: null,
+    })
+    const unknownRate = calculateLaunch({
+      ...demoInputs,
+      workshopGroup: 'other',
+      groupJoinRatePercent: null,
+    })
+    const knownRate = calculateLaunch({
+      ...demoInputs,
+      workshopGroup: 'facebook',
+      groupJoinRatePercent: 30,
+    })
+
+    expect(noGroup.selected.groupJoinsExpected).toBeNull()
+    expect(unknownRate.selected.groupJoinsExpected).toBeNull()
+    expect(knownRate.selected.groupJoinsExpected).toBe(195)
   })
 
   it('allows a participant rate above the recorded high without exceeding 100%', () => {

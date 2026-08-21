@@ -98,3 +98,38 @@
 - The common-currency shortcuts are a provisional UX choice until Advantage usage data defines the best ordering.
 - One currency labels every amount in a plan. Changing it never converts price, revenue, ad-budget or cost inputs; calculated amounts round only to the selected currency’s official smallest unit.
 - Euro-only methodology thresholds remain limited to EUR. Other currencies continue to route those decisions to coach review.
+
+## 2026-08-20 — EUR default, compact layout and optional workshop groups
+
+**Source:** Slack DM channel `D03F510JB`, Launch Assistant thread `1786272628.614009`, reply from Sigrun at timestamp `1787242125.523589`.
+
+**Supporting attachments:** `F0BR50H9SS3` and `F0BRJDFPNBY`.
+
+### Confirmed corrections and evidence
+
+- EUR should be selected by default.
+- Currency selection remains available but should be a secondary control, not the first prominent question.
+- The current headline and overall layout are not user-friendly.
+- The current calculator step should fit above the fold on a full-screen laptop.
+- Moving between steps should not make the page jump.
+- A launch may use no workshop group.
+- Sigrun reported that recent workshop-group join rates have fallen to around 30%.
+- Some launches skip workshop groups; groups hosted away from Facebook may have lower joining rates.
+- Sigrun has no measured workshop-group join rate for her list launch.
+
+### Conservative prototype treatment
+
+- Keep the international currency catalogue, preselect EUR and place currency changing behind a secondary control.
+- Keep the active calculator card in a stable laptop-height stage and prevent focus changes from scrolling back to the intro.
+- Ask explicitly whether the launch has no group, a Facebook group or a group on another platform.
+- Do not calculate or display numeric group joins when no group is planned or no evidence-based rate is supplied.
+- Present 30% as a recent sourced reference, not as an authoritative universal default.
+- Keep the outline’s 60% and 70% figures as historical source facts rather than current UI defaults.
+
+### Clarification still required
+
+- Sigrun said the current Beginner Screen 6 should either be removed or moved to Screen 1. She did not choose between those alternatives, so this release leaves its placement unchanged pending that choice.
+
+### Phase 0 status
+
+This reply supplies prototype corrections and one updated benchmark. It does not provide a historical golden case, approved expected outputs or explicit Phase 0 gate approval. The validation set remains `0/5` executable and Phase 0 remains open.
