@@ -1,0 +1,128 @@
+import { describe, expect, it } from 'vitest'
+import { calculateLaunch } from '../src/domain/calculator'
+import { demoInputs } from '../src/domain/schema'
+import { composeStrategy } from '../src/domain/strategy'
+import {
+  knowledgeById,
+  knowledgeCards,
+  SOURCE_PAGE_COUNT,
+} from '../src/knowledge/cards'
+
+describe('knowledge provenance', () => {
+  it('keeps every source page inside the verified 37-page PDF', () => {
+    for (const card of knowledgeCards) {
+      if (card.source.kind !== 'outline') continue
+      expect(card.source.pages.length).toBeGreaterThan(0)
+      for (const page of card.source.pages) {
+        expect(page).toBeGreaterThanOrEqual(1)
+        expect(page).toBeLessThanOrEqual(SOURCE_PAGE_COUNT)
+      }
+    }
+  })
+
+  it('keeps Sigrun feedback separate from PDF page citations', () => {
+    const feedbackCards = knowledgeCards.filter(
+      (card) => card.source.kind === 'method-owner-feedback',
+    )
+
+    expect(feedbackCards.map((card) => card.id)).toEqual([
+      'SIGRUN-ATTENDANCE-2026-08-09',
+      'SIGRUN-WORKSHOP-2026-08-09',
+      'SIGRUN-FORMULAS-2026-08-09',
+      'SIGRUN-REACH-2026-08-11',
+      'SIGRUN-CONVERSION-2026-08-16',
+      'SIGRUN-REACH-2026-08-16',
+      'SIGRUN-PLANNER-2026-08-20',
+      'SIGRUN-BEGINNER-2026-08-21',
+      'SIGRUN-COMMUNITY-2026-08-21',
+      'SIGRUN-ECONOMICS-LAYOUT-2026-08-21',
+    ])
+  })
+
+  it('records Sigrun’s compact-planner and optional-group correction conservatively', () => {
+    const card = knowledgeById['SIGRUN-PLANNER-2026-08-20']
+
+    expect(card.source).toEqual({
+      kind: 'method-owner-feedback',
+      author: 'Sigrun',
+      date: '2026-08-20',
+    })
+    expect(card.guidance).toContain('EUR as the default')
+    expect(card.guidance).toContain('currency selection secondary')
+    expect(card.guidance).toContain('above the fold')
+    expect(card.guidance).toContain('workshop group is optional')
+    expect(card.guidance).toContain('30%')
+    expect(card.guidance).toContain('not a universal default')
+    expect(card.guidance).toContain('no measured rate')
+  })
+
+  it('records the resolved conversion base without inventing reach bands', () => {
+    expect(knowledgeById['SIGRUN-CONVERSION-2026-08-16'].guidance).toContain(
+      'all workshop signups',
+    )
+    expect(knowledgeById['SIGRUN-REACH-2026-08-16'].guidance).toContain(
+      'exact bands still need validation',
+    )
+  })
+
+  it('records the scoped Beginner defaults without turning them into universal assumptions', () => {
+    const card = knowledgeById['SIGRUN-BEGINNER-2026-08-21']
+
+    expect(card.source).toEqual({
+      kind: 'method-owner-feedback',
+      author: 'Sigrun',
+      date: '2026-08-21',
+    })
+    expect(card.guidance).toContain('Beginner')
+    expect(card.guidance).toContain('20%')
+    expect(card.guidance).toContain('higher or lower')
+    expect(card.guidance).toContain('launch community')
+    expect(card.guidance).toContain('30%')
+    expect(card.guidance).toContain('not a universal')
+  })
+
+  it('records the later community simplification without inventing a conversion uplift', () => {
+    const card = knowledgeById['SIGRUN-COMMUNITY-2026-08-21']
+
+    expect(card.source).toEqual({
+      kind: 'method-owner-feedback',
+      author: 'Sigrun',
+      date: '2026-08-21',
+    })
+    expect(card.guidance).toContain('slightly positive influence')
+    expect(card.guidance).toContain('20%')
+    expect(card.guidance).toContain('0.69%')
+    expect(card.guidance).toContain('skip the community part')
+    expect(card.guidance).toContain('No numeric community uplift')
+  })
+
+  it('records the shared offer-economics alignment as presentation-only guidance', () => {
+    const card = knowledgeById['SIGRUN-ECONOMICS-LAYOUT-2026-08-21']
+
+    expect(card.source).toEqual({
+      kind: 'method-owner-feedback',
+      author: 'Sigrun',
+      date: '2026-08-21',
+    })
+    expect(card.guidance).toContain('Planned sales revenue')
+    expect(card.guidance).toContain('shared offer-economics group')
+    expect(card.guidance).toContain('does not change calculations or methodology')
+  })
+
+  it('ensures every displayed recommendation cites a real knowledge card', () => {
+    const plan = composeStrategy(demoInputs, calculateLaunch(demoInputs))
+    const recommendations = [...plan.recommendations, ...plan.nextMoves]
+
+    for (const recommendation of recommendations) {
+      expect(recommendation.sourceIds.length).toBeGreaterThan(0)
+      for (const sourceId of recommendation.sourceIds) {
+        expect(knowledgeById[sourceId]).toBeDefined()
+      }
+    }
+  })
+
+  it('uses stable, unique card identifiers', () => {
+    const ids = knowledgeCards.map((card) => card.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+})

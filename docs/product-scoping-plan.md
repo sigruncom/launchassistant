@@ -77,6 +77,12 @@ Standalone subscriptions, licences for other coaching teams, and white-label edi
 | **3. Connect** | Somba data improves planning and execution | Selected CRM/launch metrics, API connection, lifecycle events, and limited status write-back | Data integration reduces work or improves outcomes enough to justify maintenance |
 | **4. Productize** | An optional external software business | Billing, multi-brand support, external coach licences, white-labeling, anonymized benchmarks | Pursued only if Sigrun later chooses to expand access beyond Advantage |
 
+Sigrun approved starting the five-category historical validation pass in Slack reply `1786895999.683269` on 2026-08-16. No case data or expected outputs were supplied, so the immediate Phase 0 task is to collect and run those five cases before expanding toward the 10–20 reconstructed-launch set.
+
+Sigrun later reported in Slack reply `1787329580.840629` that a June launch using a community converted at 0.69%, then directed Beginner to omit community in reply `1787329961.144849`. The June observation is incomplete historical evidence: without the underlying inputs, source artifact and approved outputs it does not make a golden case executable, change the deterministic conversion formula or pass the Phase 0 gate.
+
+Sigrun confirmed in Slack reply `1786916169.808439` that the planner must retain EUR and support a broader international currency list for Advantage members across roughly 70 countries. Each plan uses one selected currency for all amounts. The calculator respects that currency’s smallest unit but performs no exchange-rate conversion; the source-defined €297 and €1,000 methodology rules remain EUR-only.
+
 An indicative path for a small experienced team is 1–2 weeks for Phase 0, 4–8 weeks for the Phase 1 product, and a 2–4 week controlled pilot. This should be re-estimated after the formula and workflow audit.
 
 ## 5. Phase 1 product scope
@@ -110,18 +116,18 @@ An indicative path for a small experienced team is 1–2 weeks for Phase 0, 4–
 - Existing audience/list and audience quality
 - Historical opt-in, attendance, application, sales-call, and purchase conversion rates
 - Organic versus paid acquisition mix, cost per lead, and available budget
-- Launch dates, runway, team capacity, and delivery capacity
+- Launch dates, runway, and team capacity
 - Proof level, prior-launch experience, offer maturity, and channel readiness
 
 ### Calculator outputs
 
-- Required sales and maximum feasible client intake or delivery capacity
+- Required sales
 - Required offer exposure, calls, attendees, registrations, leads, and estimated reach
 - Paid lead requirement, acquisition cost, and budget where applicable
 - Gross revenue, expected collected cash, variable cost, contribution, and margin
 - Conservative, base, and stretch scenarios
 - The assumptions with the greatest sensitivity
-- Capacity conflicts, missing inputs, and Sigrun-defined warning conditions
+- Missing inputs and Sigrun-defined warning conditions
 
 The exact funnel stages should follow Sigrun's actual launch archetypes. The engine should work backwards from the goal, retain every formula and assumption, and assign a `calculator_version` to every saved result.
 
@@ -251,6 +257,8 @@ Do not use email as the only external identity key. HighLevel can permit multipl
 This creates one additional authentication step the first time a participant enters the Launch Planner, but it avoids a fragile pseudo-SSO based on query parameters or email. After the initial login, a normal persistent session makes return visits low-friction.
 
 ### Confirmed membership policy
+
+Sigrun reconfirmed in Slack reply `1786895999.683269` on 2026-08-16 that saving and export are available while Advantage membership is active, then access ends and the participant data is deleted when membership ends.
 
 - **Eligible participants:** active Advantage members only. Other Sigrun program participants are ineligible.
 - **Membership model:** continuous membership; there are no cohorts.
