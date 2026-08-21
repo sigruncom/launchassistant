@@ -8,6 +8,8 @@ Sigrun approved these five validation categories but did not yet supply the hist
 
 Reply `1787242125.523589` supplied prototype corrections and a recent group-joining observation, but no historical case inputs or approved expected outputs. Status remains `0/5` executable.
 
+Reply `1787325821.911649` supplied Beginner UI and default-rate corrections, but no historical launch inputs or approved expected outputs. It is not a golden case. Status remains `0/5` executable.
+
 | Case category | Historical source | Original calculator inputs | Approved numeric outputs | Approved launch shape | Red flags | Coach override | Status |
 |---|---|---|---|---|---|---|---|
 | Successful warm launch | Awaiting Sigrun | Awaiting Sigrun | Awaiting Sigrun | Awaiting Sigrun | Awaiting Sigrun | Awaiting Sigrun | Blocked on case data |

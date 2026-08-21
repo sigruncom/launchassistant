@@ -9,6 +9,8 @@ import {
   beginnerAnswerSchema,
   beginnerBlank,
   beginnerGoalFallbackErrors,
+  BEGINNER_GROUP_JOIN_RATE_DEFAULT,
+  BEGINNER_SHOW_UP_RATE_DEFAULT,
   createEmailReachTrace,
   estimateOrganicRegistrationsFromEmailList,
   ORGANIC_SIGNUP_RATE_DEFAULT,
@@ -30,10 +32,9 @@ const answerDraft = (overrides: Record<string, unknown> = {}) => ({
   replayOffered: 'yes',
   showUpBonusPlanned: 'no',
   conversionRatePercent: 2,
-  groupJoinRatePercent: '60',
   recentResearch: 'not-yet',
   surveyResponses: '12',
-  workshopGroup: 'facebook',
+  launchCommunity: 'yes',
   ...overrides,
 })
 
@@ -64,12 +65,16 @@ describe('beginner variant', () => {
     expect(appVariantHref('complete')).toBe('?planner=complete')
   })
 
-  it('starts with only the approved EUR and email signup-rate defaults', () => {
+  it('starts with only the approved EUR, email signup and show-up defaults', () => {
     expect(beginnerBlank.currency).toBe('EUR')
     expect(beginnerBlank.organicSignupRatePercent).toBe(String(ORGANIC_SIGNUP_RATE_DEFAULT))
+    expect(beginnerBlank.showUpRatePercent).toBe(String(BEGINNER_SHOW_UP_RATE_DEFAULT))
     expect(
       Object.entries(beginnerBlank)
-        .filter(([key]) => !['currency', 'organicSignupRatePercent'].includes(key))
+        .filter(
+          ([key]) =>
+            !['currency', 'organicSignupRatePercent', 'showUpRatePercent'].includes(key),
+        )
         .every(([, value]) => value === ''),
     ).toBe(true)
     expect(beginnerAnswerSchema.safeParse(beginnerBlank).success).toBe(false)
@@ -231,7 +236,6 @@ describe('beginner variant', () => {
       parsedAnswers({
         conversionRatePercent: 1,
         showUpRatePercent: '30',
-        groupJoinRatePercent: '70',
         workshopDurationDays: 1,
         audienceContext: 'b2b',
         replayOffered: 'no',
@@ -241,8 +245,8 @@ describe('beginner variant', () => {
 
     expect(inputs.conversionRatePercent).toBe(1)
     expect(inputs.showUpRatePercent).toBe(30)
-    expect(inputs.groupJoinRatePercent).toBe(70)
-    expect(inputs.workshopGroup).toBe('facebook')
+    expect(inputs.groupJoinRatePercent).toBe(BEGINNER_GROUP_JOIN_RATE_DEFAULT)
+    expect(inputs.workshopGroup).toBe('other')
     expect(inputs.workshopDurationDays).toBe(1)
     expect(inputs.audienceContext).toBe('b2b')
     expect(inputs.replayOffered).toBe(false)
@@ -250,8 +254,8 @@ describe('beginner variant', () => {
     expect(inputs.organicRegistrations).toBe(180)
   })
 
-  it('supports a launch with no workshop group without inventing a zero-percent rate', () => {
-    const answers = parsedAnswers({ workshopGroup: 'none', groupJoinRatePercent: '' })
+  it('supports a launch with no community without inventing a zero-percent rate', () => {
+    const answers = parsedAnswers({ launchCommunity: 'no' })
     const inputs = toBeginnerLaunchInputs(answers)
     const calculation = calculateLaunch(inputs)
     const strategy = composeStrategy(inputs, calculation)
@@ -264,17 +268,16 @@ describe('beginner variant', () => {
     expect(inputs.workshopGroup).toBe('none')
     expect(inputs.groupJoinRatePercent).toBeNull()
     expect(calculation.selected.groupJoinsExpected).toBeNull()
-    expect(copy).toContain('no workshop group planned')
+    expect(copy).toContain('no launch community planned')
     expect(copy).not.toContain('0% group')
   })
 
-  it('leaves group joins unestimated when a group has no evidence-based rate', () => {
-    const inputs = toBeginnerLaunchInputs(
-      parsedAnswers({ workshopGroup: 'other', groupJoinRatePercent: '' }),
-    )
+  it('applies Sigrun’s 30% default when the beginner has a launch community', () => {
+    const inputs = toBeginnerLaunchInputs(parsedAnswers({ launchCommunity: 'yes' }))
 
-    expect(inputs.groupJoinRatePercent).toBeNull()
-    expect(calculateLaunch(inputs).selected.groupJoinsExpected).toBeNull()
+    expect(inputs.workshopGroup).toBe('other')
+    expect(inputs.groupJoinRatePercent).toBe(BEGINNER_GROUP_JOIN_RATE_DEFAULT)
+    expect(calculateLaunch(inputs).selected.groupJoinsExpected).toBe(195)
   })
 
   it('produces the expected starting plan at the selected 20% show-up rate', () => {

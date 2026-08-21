@@ -33,6 +33,7 @@ describe('knowledge provenance', () => {
       'SIGRUN-CONVERSION-2026-08-16',
       'SIGRUN-REACH-2026-08-16',
       'SIGRUN-PLANNER-2026-08-20',
+      'SIGRUN-BEGINNER-2026-08-21',
     ])
   })
 
@@ -60,6 +61,22 @@ describe('knowledge provenance', () => {
     expect(knowledgeById['SIGRUN-REACH-2026-08-16'].guidance).toContain(
       'exact bands still need validation',
     )
+  })
+
+  it('records the scoped Beginner defaults without turning them into universal assumptions', () => {
+    const card = knowledgeById['SIGRUN-BEGINNER-2026-08-21']
+
+    expect(card.source).toEqual({
+      kind: 'method-owner-feedback',
+      author: 'Sigrun',
+      date: '2026-08-21',
+    })
+    expect(card.guidance).toContain('Beginner')
+    expect(card.guidance).toContain('20%')
+    expect(card.guidance).toContain('higher or lower')
+    expect(card.guidance).toContain('launch community')
+    expect(card.guidance).toContain('30%')
+    expect(card.guidance).toContain('not a universal')
   })
 
   it('ensures every displayed recommendation cites a real knowledge card', () => {

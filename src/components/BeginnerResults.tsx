@@ -19,9 +19,9 @@ type BeginnerResultsProps = {
 type BeginnerMove = Pick<Recommendation, 'id' | 'title' | 'body' | 'sourceIds'>
 
 const workshopGroupSummary = (inputs: LaunchInputs) => {
-  if (inputs.workshopGroup === 'none') return 'no workshop group planned'
-  if (inputs.groupJoinRatePercent === null) return 'workshop-group joining not estimated'
-  return `${inputs.groupJoinRatePercent}% workshop-group joining`
+  if (inputs.workshopGroup === 'none') return 'no launch community planned'
+  if (inputs.groupJoinRatePercent === null) return 'launch-community joining not estimated'
+  return `${inputs.groupJoinRatePercent}% launch-community joining`
 }
 
 const makeBeginnerMoves = (strategy: StrategyPlan): BeginnerMove[] => {
@@ -91,7 +91,7 @@ export const createBeginnerPlanCopy = (
         ]
       : []),
     '',
-    `Selected inputs: ${inputs.conversionRatePercent}% sales conversion, ${inputs.showUpRatePercent}% live attendance, ${workshopGroupSummary(inputs)}, ${inputs.workshopDurationDays}-day workshop.`,
+    `Planning assumptions: ${inputs.conversionRatePercent}% sales conversion, ${inputs.showUpRatePercent}% live attendance, ${workshopGroupSummary(inputs)}, ${inputs.workshopDurationDays}-day workshop.`,
   ].join('\n')
 }
 
@@ -223,7 +223,7 @@ export function BeginnerResults({
         <div>
           <p>
             Your email reach estimate uses a list of {emailListSize.toLocaleString()} and a{' '}
-            {organicSignupRatePercent}% signup rate. You also selected{' '}
+            {organicSignupRatePercent}% signup rate. This plan also uses{' '}
             {inputs.conversionRatePercent}% sales conversion, {inputs.showUpRatePercent}% live
             attendance, {workshopGroupSummary(inputs)} and a{' '}
             {inputs.workshopDurationDays}-day workshop.
@@ -237,6 +237,7 @@ export function BeginnerResults({
             <SourceChip sourceId="SIGRUN-REACH-2026-08-11" />
             <SourceChip sourceId="SIGRUN-REACH-2026-08-16" />
             <SourceChip sourceId="SIGRUN-PLANNER-2026-08-20" />
+            <SourceChip sourceId="SIGRUN-BEGINNER-2026-08-21" />
             <SourceChip sourceId="LS-ADS-001" />
           </div>
           <p>

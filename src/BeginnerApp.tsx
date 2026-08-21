@@ -101,14 +101,6 @@ function BeginnerApp() {
     setDraft((current) => ({ ...current, [key]: value }))
   }
 
-  const updateWorkshopGroup = (value: BeginnerDraft['workshopGroup']) => {
-    setDraft((current) => ({
-      ...current,
-      workshopGroup: value,
-      groupJoinRatePercent: value === 'none' ? '' : current.groupJoinRatePercent,
-    }))
-  }
-
   const focusStepHeading = (step: StepIndex) => {
     window.requestAnimationFrame(() => {
       if (step === 6) {
@@ -297,6 +289,7 @@ function BeginnerApp() {
                   id="beginner-show-up-rate"
                   value={draft.showUpRatePercent}
                   onChange={(value) => update('showUpRatePercent', value)}
+                  variant="beginner"
                 />
                 <ChoiceGroup<BeginnerYesNo | ''>
                   legend="Will registrants receive a replay?"
@@ -362,30 +355,25 @@ function BeginnerApp() {
                   value={draft.surveyResponses}
                   onChange={(value) => update('surveyResponses', value)}
                 />
-                <ChoiceGroup<BeginnerDraft['workshopGroup']>
-                  legend="Will this launch use a workshop group?"
-                  name="beginner-workshop-group"
-                  value={draft.workshopGroup}
-                  onChange={updateWorkshopGroup}
+                <ChoiceGroup<BeginnerYesNo | ''>
+                  legend="Do you have a launch community?"
+                  name="beginner-launch-community"
+                  value={draft.launchCommunity}
+                  onChange={(value) => update('launchCommunity', value)}
+                  columns={2}
                   choices={[
-                    { value: 'none', label: 'No group', detail: 'Skip a workshop group' },
-                    { value: 'facebook', label: 'Facebook', detail: 'Use a Facebook group' },
-                    { value: 'other', label: 'Another platform', detail: 'Use a different community space' },
+                    {
+                      value: 'yes',
+                      label: 'Yes',
+                      detail: 'Plan with the 30% community-join default',
+                    },
+                    {
+                      value: 'no',
+                      label: 'No',
+                      detail: 'Skip the community estimate',
+                    },
                   ]}
                 />
-                {draft.workshopGroup && draft.workshopGroup !== 'none' ? (
-                  <DraftNumberField
-                    id="beginner-group-join-rate"
-                    label="Expected workshop-group join rate (optional)"
-                    hint="Use your own evidence if you have it. Around 30% is a recent observed rate, not a universal default."
-                    placeholder="Leave empty if unknown"
-                    suffix="%"
-                    min={1}
-                    max={100}
-                    value={draft.groupJoinRatePercent}
-                    onChange={(value) => update('groupJoinRatePercent', value)}
-                  />
-                ) : null}
               </div>
             ) : null}
 

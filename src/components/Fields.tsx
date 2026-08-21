@@ -59,17 +59,25 @@ type ShowUpRateFieldProps = {
   id: string
   value: string
   onChange: (value: string) => void
+  variant?: 'beginner' | 'complete'
 }
 
-export function ShowUpRateField({ id, value, onChange }: ShowUpRateFieldProps) {
+export function ShowUpRateField({
+  id,
+  value,
+  onChange,
+  variant = 'complete',
+}: ShowUpRateFieldProps) {
   const presets = [10, 20, 30] as const
+  const isBeginner = variant === 'beginner'
 
   return (
     <fieldset className="rate-fieldset">
       <legend>Expected live show-up rate</legend>
       <p className="field-hint">
-        Typical cases are 10%, 20% and 30%. Sigrun expects 20%. A warm audience without a replay
-        has reached 70%; no replay and a strong show-up bonus can each lift attendance.
+        {isBeginner
+          ? 'We start at 20%. Choose a lower or higher rate if your own launches give you a better estimate.'
+          : 'Typical cases are 10%, 20% and 30%. Sigrun expects 20%. A warm audience without a replay has reached 70%; no replay and a strong show-up bonus can each lift attendance.'}
       </p>
       <div className="rate-presets" aria-label="Show-up rate shortcuts">
         {presets.map((preset) => (
@@ -87,8 +95,12 @@ export function ShowUpRateField({ id, value, onChange }: ShowUpRateFieldProps) {
       </div>
       <DraftNumberField
         id={id}
-        label="Use a different evidence-based rate"
-        hint="Enter any rate from 1% to 100%. The recorded high in Sigrun’s feedback is 70%."
+        label={isBeginner ? 'Use another rate' : 'Use a different evidence-based rate'}
+        hint={
+          isBeginner
+            ? 'Enter any rate from 1% to 100% if 10%, 20% or 30% does not fit.'
+            : 'Enter any rate from 1% to 100%. The recorded high in Sigrun’s feedback is 70%.'
+        }
         suffix="%"
         min={1}
         max={100}

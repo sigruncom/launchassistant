@@ -133,3 +133,31 @@
 ### Phase 0 status
 
 This reply supplies prototype corrections and one updated benchmark. It does not provide a historical golden case, approved expected outputs or explicit Phase 0 gate approval. The validation set remains `0/5` executable and Phase 0 remains open.
+
+## 2026-08-21 — Beginner attendance and launch-community simplification
+
+**Source:** Slack DM channel `D03F510JB`, Launch Assistant thread `1786272628.614009`, reply from Sigrun at timestamp `1787325821.911649`.
+
+**Supporting attachment:** `F0BRDNTPSMD`.
+
+### Confirmed decisions
+
+- Beginner starts live show-up at 20% and still lets the participant choose a higher or lower rate.
+- Beginner no longer asks which platform hosts the group or asks the participant to estimate a group-join percentage.
+- Beginner asks only whether a launch community exists.
+- “Yes” applies a 30% community-join planning rate. “No” leaves group joins unestimated rather than treating the rate as zero.
+
+### Scoped prototype treatment
+
+- Apply this simplification to Beginner because Sigrun explicitly framed the correction around beginner complexity.
+- Keep Complete’s richer platform and participant-supplied rate controls unchanged pending separate direction.
+- This supersedes the 2026-08-20 “reference only” treatment for the scoped Beginner default. It does not turn 30% into a universal group-join assumption.
+- The calculation formulas remain deterministic and unchanged; the Beginner answer is mapped into the existing optional-group contract before calculation.
+
+### Placement still unresolved
+
+This reply changes the launch-community question on Beginner Screen 6 but does not decide whether the audience-research questions should remain there, move to Screen 1 or be removed. Their placement remains unchanged pending Sigrun’s earlier choice.
+
+### Phase 0 status
+
+This is prototype default and question-design guidance, not a historical launch case. It supplies no approved case outputs and no explicit Phase 0 gate approval. The validation set remains `0/5` executable and Phase 0 remains open.

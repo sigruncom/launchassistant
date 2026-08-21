@@ -155,6 +155,14 @@ export const knowledgeCards = [
     source: { kind: 'method-owner-feedback', author: 'Sigrun', date: '2026-08-20' },
     kind: 'decision',
   },
+  {
+    id: 'SIGRUN-BEGINNER-2026-08-21',
+    title: 'Simplify Beginner attendance and launch-community planning',
+    guidance:
+      'In Beginner, start live show-up at 20% while allowing a higher or lower choice. Ask only whether a launch community exists. When it does, use 30% as the Beginner group-join default; when it does not, do not estimate group joins. This is a scoped Beginner default, not a universal group-join assumption.',
+    source: { kind: 'method-owner-feedback', author: 'Sigrun', date: '2026-08-21' },
+    kind: 'decision',
+  },
 ] as const satisfies readonly KnowledgeCard[]
 
 export type KnowledgeCardId = (typeof knowledgeCards)[number]['id']

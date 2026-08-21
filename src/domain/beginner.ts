@@ -5,7 +5,6 @@ import {
   currencySchema,
   launchInputSchema,
   workshopDurationValues,
-  workshopGroupValues,
   type LaunchInputs,
 } from './schema'
 import {
@@ -25,6 +24,8 @@ export const beginnerYesNoValues = ['yes', 'no'] as const
 export const EMAIL_LIST_SIZE_MAX = 100_000_000
 export const ORGANIC_SIGNUP_RATE_DEFAULT = 10
 export const ORGANIC_SIGNUP_RATE_MAX = 50
+export const BEGINNER_SHOW_UP_RATE_DEFAULT = 20
+export const BEGINNER_GROUP_JOIN_RATE_DEFAULT = 30
 export const EMAIL_REACH_SOURCE_ID = 'SIGRUN-REACH-2026-08-11' as const
 
 export type EmailReachTrace = {
@@ -66,10 +67,9 @@ export type BeginnerDraft = {
   replayOffered: BeginnerYesNo | ''
   showUpBonusPlanned: BeginnerYesNo | ''
   conversionRatePercent: LaunchInputs['conversionRatePercent'] | ''
-  groupJoinRatePercent: string
   recentResearch: BeginnerResearch | ''
   surveyResponses: string
-  workshopGroup: LaunchInputs['workshopGroup'] | ''
+  launchCommunity: BeginnerYesNo | ''
 }
 
 const requiredWholeNumber = (label: string, maximum: number) =>
@@ -101,18 +101,6 @@ const requiredPercent = (label: string, maximum: number, minimum = 1) =>
       { message: `Enter ${label} between ${minimum}% and ${maximum}%.` },
     )
     .transform(Number)
-
-const optionalPercent = (label: string, maximum: number, minimum = 1) =>
-  z
-    .string()
-    .trim()
-    .refine(
-      (value) =>
-        value === '' ||
-        (Number.isFinite(Number(value)) && Number(value) >= minimum && Number(value) <= maximum),
-      { message: `Enter ${label} between ${minimum}% and ${maximum}%, or leave it empty.` },
-    )
-    .transform((value) => (value === '' ? null : Number(value)))
 
 export const createEmailReachTrace = (
   emailListSize: number,
@@ -206,10 +194,9 @@ const beginnerAnswerShape = {
     })
     .transform((value) => value === 'yes'),
   surveyResponses: requiredWholeNumber('survey responses collected', 100_000),
-  workshopGroup: z.enum(workshopGroupValues, {
-    error: 'Choose whether this launch will use a workshop group.',
+  launchCommunity: z.enum(beginnerYesNoValues, {
+    error: 'Choose whether this launch has a launch community.',
   }),
-  groupJoinRatePercent: optionalPercent('a workshop-group join rate', 100),
 } satisfies z.ZodRawShape
 
 type BeginnerGoalDraft = {
@@ -282,14 +269,6 @@ export const beginnerAnswerSchema = createBeginnerSchema({
   ...beginnerAttendanceShape,
   ...beginnerSalesShape,
   ...beginnerAnswerShape,
-}).superRefine((value, context) => {
-  if (value.workshopGroup === 'none' && value.groupJoinRatePercent !== null) {
-    context.addIssue({
-      code: 'custom',
-      path: ['groupJoinRatePercent'],
-      message: 'Leave the group join rate empty when no workshop group is planned.',
-    })
-  }
 })
 
 export type BeginnerAnswers = z.output<typeof beginnerAnswerSchema>
@@ -303,14 +282,13 @@ export const beginnerBlank: BeginnerDraft = {
   organicSignupRatePercent: String(ORGANIC_SIGNUP_RATE_DEFAULT),
   audienceContext: '',
   workshopDurationDays: '',
-  showUpRatePercent: '',
+  showUpRatePercent: String(BEGINNER_SHOW_UP_RATE_DEFAULT),
   replayOffered: '',
   showUpBonusPlanned: '',
   conversionRatePercent: '',
-  groupJoinRatePercent: '',
   recentResearch: '',
   surveyResponses: '',
-  workshopGroup: '',
+  launchCommunity: '',
 }
 
 export const toBeginnerLaunchInputs = (answers: BeginnerAnswers): LaunchInputs =>
@@ -332,8 +310,9 @@ export const toBeginnerLaunchInputs = (answers: BeginnerAnswers): LaunchInputs =
     showUpBonusPlanned: answers.showUpBonusPlanned,
     recentResearch: answers.recentResearch,
     surveyResponses: answers.surveyResponses,
-    workshopGroup: answers.workshopGroup,
+    workshopGroup: answers.launchCommunity === 'yes' ? 'other' : 'none',
     conversionRatePercent: answers.conversionRatePercent,
     showUpRatePercent: answers.showUpRatePercent,
-    groupJoinRatePercent: answers.groupJoinRatePercent,
+    groupJoinRatePercent:
+      answers.launchCommunity === 'yes' ? BEGINNER_GROUP_JOIN_RATE_DEFAULT : null,
   })
