@@ -186,3 +186,23 @@ This is prototype default and question-design guidance, not a historical launch 
 ### Validation status
 
 The June 0.69% result is partial historical evidence, not an executable golden case. The original price, registrations, buyers or revenue, show-up rate, workshop format, source artifact and approved expected outputs are still required. The validation set remains `0/5` executable and Phase 0 remains open.
+
+## 2026-08-21 — Offer-economics visual alignment
+
+**Source:** Slack DM channel `D03F510JB`, Launch Assistant thread `1786272628.614009`, reply from Sigrun at timestamp `1787333041.552719`.
+
+**Supporting attachment:** `F0BSQEHRA8Y`.
+
+### Confirmed correction
+
+- Visually align the “Planned sales revenue” control with the other offer-economics controls.
+- Apply the same alignment wherever the shared offer-economics group appears.
+
+### Scoped prototype treatment
+
+- Make this a presentation-only change in the shared offer-economics styles so Beginner and Complete remain consistent.
+- Keep labels, accepted inputs, formulas, rounding and methodology unchanged.
+
+### Phase 0 status
+
+This is interface-presentation feedback, not a historical launch case, approved expected output or Phase 0 gate approval. The validation set remains `0/5` executable and Phase 0 remains open.

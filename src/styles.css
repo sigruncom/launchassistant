@@ -518,9 +518,19 @@ button:disabled {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.economics-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.economics-field .number-control {
+  margin-top: auto;
+}
+
 .field .economics-label {
   display: flex;
   min-height: 20px;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;

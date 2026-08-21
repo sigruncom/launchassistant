@@ -35,6 +35,7 @@ describe('knowledge provenance', () => {
       'SIGRUN-PLANNER-2026-08-20',
       'SIGRUN-BEGINNER-2026-08-21',
       'SIGRUN-COMMUNITY-2026-08-21',
+      'SIGRUN-ECONOMICS-LAYOUT-2026-08-21',
     ])
   })
 
@@ -93,6 +94,19 @@ describe('knowledge provenance', () => {
     expect(card.guidance).toContain('0.69%')
     expect(card.guidance).toContain('skip the community part')
     expect(card.guidance).toContain('No numeric community uplift')
+  })
+
+  it('records the shared offer-economics alignment as presentation-only guidance', () => {
+    const card = knowledgeById['SIGRUN-ECONOMICS-LAYOUT-2026-08-21']
+
+    expect(card.source).toEqual({
+      kind: 'method-owner-feedback',
+      author: 'Sigrun',
+      date: '2026-08-21',
+    })
+    expect(card.guidance).toContain('Planned sales revenue')
+    expect(card.guidance).toContain('shared offer-economics group')
+    expect(card.guidance).toContain('does not change calculations or methodology')
   })
 
   it('ensures every displayed recommendation cites a real knowledge card', () => {

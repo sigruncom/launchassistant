@@ -5,7 +5,7 @@
 **Document:** `Outlines Launch & Sell - AI Launch Assistant copy - July 2025.pdf`
 
 **Verified length:** 37 pages
-**Prototype knowledge release:** `launch-and-sell-outline-2025-07+sigrun-feedback-2026-08-21-r2`
+**Prototype knowledge release:** `launch-and-sell-outline-2025-07+sigrun-feedback-2026-08-21-r3`
 
 The source PDF remains outside the repository. The prototype contains short paraphrased knowledge cards and page references, not the full program text. Dated methodology-owner feedback is stored as a separate source type and is never presented as if it came from a PDF page.
 
@@ -27,7 +27,7 @@ It intentionally excludes authentication, persistence, participant data, CRM int
 | Live attendance | Beginner starts at 20% and allows a lower or higher choice. Complete keeps an explicit selection. Typical cases are 10%, 20% and 30%; 70% is a recorded high for a warm audience without replay. No replay and a good show-up bonus can each lift attendance | pp. 19, 22 plus Sigrun feedback, 2026-08-09 and 2026-08-21 |
 | Workshop-group planning and joining | Beginner omits community planning entirely and maps to no group with no join estimate. Complete retains its platform choice and optional participant-supplied join rate. The outline’s 60% and 70% join examples and Sigrun’s recent 30% observation remain historical source facts, not active Beginner defaults | p. 22 plus Sigrun feedback, 2026-08-20 and 2026-08-21 |
 | Community and sales conversion | Sigrun said community may have a slightly positive influence on conversion but should not make or break a launch; a June community launch converted at 0.69%. No validated coefficient or complete comparison case was supplied, so the prototype does not adjust conversion for community use and does not add 0.69% to the approved 1%, 2% and 3% planning choices | Sigrun feedback, 2026-08-21 |
-| Planner layout | Keep the active calculator step above the fold on a laptop, make currency secondary and maintain a stable viewport position between steps | Sigrun feedback, 2026-08-20 |
+| Planner layout | Keep the active calculator step above the fold on a laptop, make currency secondary, maintain a stable viewport position between steps and align the shared offer-economics fields consistently wherever they appear | Sigrun feedback, 2026-08-20 and 2026-08-21 |
 | Research evidence | Fewer than 10 survey responses is insufficient; 100 is the goal | pp. 5–6, 9–10 |
 | Workshop format | Participant chooses one or three days. One day can suit B2B/time-constrained and lower-priced hobby audiences; three days can suit offers above €1,000. Sigrun’s dated guidance supersedes the outline’s earlier automatic selection rule | Sigrun feedback, 2026-08-09 |
 | Offer format | `<200` registrations: 1:1; `200–500`: group; `>500`: group/course | p. 21 |

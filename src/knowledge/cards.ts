@@ -171,6 +171,14 @@ export const knowledgeCards = [
     source: { kind: 'method-owner-feedback', author: 'Sigrun', date: '2026-08-21' },
     kind: 'decision',
   },
+  {
+    id: 'SIGRUN-ECONOMICS-LAYOUT-2026-08-21',
+    title: 'Align offer-economics fields consistently',
+    guidance:
+      'Keep “Planned sales revenue” visually aligned with the other offer-economics fields, and apply the same alignment wherever the shared offer-economics group appears. This is presentation guidance only; it does not change calculations or methodology.',
+    source: { kind: 'method-owner-feedback', author: 'Sigrun', date: '2026-08-21' },
+    kind: 'decision',
+  },
 ] as const satisfies readonly KnowledgeCard[]
 
 export type KnowledgeCardId = (typeof knowledgeCards)[number]['id']
