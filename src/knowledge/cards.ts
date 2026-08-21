@@ -163,6 +163,14 @@ export const knowledgeCards = [
     source: { kind: 'method-owner-feedback', author: 'Sigrun', date: '2026-08-21' },
     kind: 'decision',
   },
+  {
+    id: 'SIGRUN-COMMUNITY-2026-08-21',
+    title: 'Skip community planning in Beginner',
+    guidance:
+      'Keep Beginner’s editable 20% live show-up starting point. A launch community may have a slightly positive influence on conversion but should not make or break a launch; a June launch with a community converted at 0.69%. Sigrun then directed Beginner to skip the community part. No numeric community uplift is defined or applied.',
+    source: { kind: 'method-owner-feedback', author: 'Sigrun', date: '2026-08-21' },
+    kind: 'decision',
+  },
 ] as const satisfies readonly KnowledgeCard[]
 
 export type KnowledgeCardId = (typeof knowledgeCards)[number]['id']

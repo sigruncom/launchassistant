@@ -161,3 +161,28 @@ This reply changes the launch-community question on Beginner Screen 6 but does n
 ### Phase 0 status
 
 This is prototype default and question-design guidance, not a historical launch case. It supplies no approved case outputs and no explicit Phase 0 gate approval. The validation set remains `0/5` executable and Phase 0 remains open.
+
+**Superseded later the same day:** replies `1787329580.840629` and `1787329961.144849` led to the community step being omitted from Beginner entirely. The editable 20% show-up starting point remains current.
+
+## 2026-08-21 — Community evidence and final Beginner simplification
+
+**Sources:** Slack DM channel `D03F510JB`, Launch Assistant thread `1786272628.614009`, replies from Sigrun at timestamps `1787329580.840629` and `1787329961.144849`.
+
+### Evidence and decision
+
+- Sigrun said a launch community may have a slightly positive influence on conversion, but should not make or break a launch.
+- She reported that a June launch with a community converted at 0.69%.
+- No original case inputs, source artifact, approved output set or numeric community-uplift magnitude accompanied that evidence.
+- Six minutes later, Sigrun directed the team to skip the community part to keep Beginner simpler. This later direction supersedes the earlier Beginner yes/no community treatment.
+
+### Conservative prototype treatment
+
+- Remove community questions, join-rate defaults and community output from Beginner.
+- Map Beginner into the existing optional-group contract as no group and no group-join estimate. This keeps the shared deterministic calculator unchanged.
+- Do not infer or apply a community adjustment to the sales-conversion rate. The 0.69% result shows that community presence alone is not enough to define an uplift.
+- Keep Complete’s explicit group controls unchanged because Sigrun’s simplification was scoped to the Beginner discussion.
+- Keep the audience-research questions in their current position because neither reply resolves whether they should remain on Screen 6, move to Screen 1 or be removed.
+
+### Validation status
+
+The June 0.69% result is partial historical evidence, not an executable golden case. The original price, registrations, buyers or revenue, show-up rate, workshop format, source artifact and approved expected outputs are still required. The validation set remains `0/5` executable and Phase 0 remains open.

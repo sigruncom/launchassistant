@@ -34,6 +34,7 @@ describe('knowledge provenance', () => {
       'SIGRUN-REACH-2026-08-16',
       'SIGRUN-PLANNER-2026-08-20',
       'SIGRUN-BEGINNER-2026-08-21',
+      'SIGRUN-COMMUNITY-2026-08-21',
     ])
   })
 
@@ -77,6 +78,21 @@ describe('knowledge provenance', () => {
     expect(card.guidance).toContain('launch community')
     expect(card.guidance).toContain('30%')
     expect(card.guidance).toContain('not a universal')
+  })
+
+  it('records the later community simplification without inventing a conversion uplift', () => {
+    const card = knowledgeById['SIGRUN-COMMUNITY-2026-08-21']
+
+    expect(card.source).toEqual({
+      kind: 'method-owner-feedback',
+      author: 'Sigrun',
+      date: '2026-08-21',
+    })
+    expect(card.guidance).toContain('slightly positive influence')
+    expect(card.guidance).toContain('20%')
+    expect(card.guidance).toContain('0.69%')
+    expect(card.guidance).toContain('skip the community part')
+    expect(card.guidance).toContain('No numeric community uplift')
   })
 
   it('ensures every displayed recommendation cites a real knowledge card', () => {

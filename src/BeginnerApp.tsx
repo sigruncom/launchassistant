@@ -355,25 +355,6 @@ function BeginnerApp() {
                   value={draft.surveyResponses}
                   onChange={(value) => update('surveyResponses', value)}
                 />
-                <ChoiceGroup<BeginnerYesNo | ''>
-                  legend="Do you have a launch community?"
-                  name="beginner-launch-community"
-                  value={draft.launchCommunity}
-                  onChange={(value) => update('launchCommunity', value)}
-                  columns={2}
-                  choices={[
-                    {
-                      value: 'yes',
-                      label: 'Yes',
-                      detail: 'Plan with the 30% community-join default',
-                    },
-                    {
-                      value: 'no',
-                      label: 'No',
-                      detail: 'Skip the community estimate',
-                    },
-                  ]}
-                />
               </div>
             ) : null}
 

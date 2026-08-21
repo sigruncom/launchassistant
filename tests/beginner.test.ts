@@ -9,7 +9,6 @@ import {
   beginnerAnswerSchema,
   beginnerBlank,
   beginnerGoalFallbackErrors,
-  BEGINNER_GROUP_JOIN_RATE_DEFAULT,
   BEGINNER_SHOW_UP_RATE_DEFAULT,
   createEmailReachTrace,
   estimateOrganicRegistrationsFromEmailList,
@@ -34,7 +33,6 @@ const answerDraft = (overrides: Record<string, unknown> = {}) => ({
   conversionRatePercent: 2,
   recentResearch: 'not-yet',
   surveyResponses: '12',
-  launchCommunity: 'yes',
   ...overrides,
 })
 
@@ -245,8 +243,8 @@ describe('beginner variant', () => {
 
     expect(inputs.conversionRatePercent).toBe(1)
     expect(inputs.showUpRatePercent).toBe(30)
-    expect(inputs.groupJoinRatePercent).toBe(BEGINNER_GROUP_JOIN_RATE_DEFAULT)
-    expect(inputs.workshopGroup).toBe('other')
+    expect(inputs.groupJoinRatePercent).toBeNull()
+    expect(inputs.workshopGroup).toBe('none')
     expect(inputs.workshopDurationDays).toBe(1)
     expect(inputs.audienceContext).toBe('b2b')
     expect(inputs.replayOffered).toBe(false)
@@ -254,8 +252,8 @@ describe('beginner variant', () => {
     expect(inputs.organicRegistrations).toBe(180)
   })
 
-  it('supports a launch with no community without inventing a zero-percent rate', () => {
-    const answers = parsedAnswers({ launchCommunity: 'no' })
+  it('omits community planning from Beginner without inventing a zero-percent rate', () => {
+    const answers = parsedAnswers()
     const inputs = toBeginnerLaunchInputs(answers)
     const calculation = calculateLaunch(inputs)
     const strategy = composeStrategy(inputs, calculation)
@@ -268,16 +266,9 @@ describe('beginner variant', () => {
     expect(inputs.workshopGroup).toBe('none')
     expect(inputs.groupJoinRatePercent).toBeNull()
     expect(calculation.selected.groupJoinsExpected).toBeNull()
-    expect(copy).toContain('no launch community planned')
+    expect(copy).not.toContain('launch community')
+    expect(copy).not.toContain('launch-community')
     expect(copy).not.toContain('0% group')
-  })
-
-  it('applies Sigrun’s 30% default when the beginner has a launch community', () => {
-    const inputs = toBeginnerLaunchInputs(parsedAnswers({ launchCommunity: 'yes' }))
-
-    expect(inputs.workshopGroup).toBe('other')
-    expect(inputs.groupJoinRatePercent).toBe(BEGINNER_GROUP_JOIN_RATE_DEFAULT)
-    expect(calculateLaunch(inputs).selected.groupJoinsExpected).toBe(195)
   })
 
   it('produces the expected starting plan at the selected 20% show-up rate', () => {

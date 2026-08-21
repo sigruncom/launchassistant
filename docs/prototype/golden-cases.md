@@ -10,6 +10,8 @@ Reply `1787242125.523589` supplied prototype corrections and a recent group-join
 
 Reply `1787325821.911649` supplied Beginner UI and default-rate corrections, but no historical launch inputs or approved expected outputs. It is not a golden case. Status remains `0/5` executable.
 
+Replies `1787329580.840629` and `1787329961.144849` supplied partial historical evidence that a June launch with a community converted at 0.69%, followed by a decision to omit community from Beginner. The source artifact, original inputs and approved expected outputs were not supplied, so this evidence is not yet an executable golden case. Status remains `0/5` executable.
+
 | Case category | Historical source | Original calculator inputs | Approved numeric outputs | Approved launch shape | Red flags | Coach override | Status |
 |---|---|---|---|---|---|---|---|
 | Successful warm launch | Awaiting Sigrun | Awaiting Sigrun | Awaiting Sigrun | Awaiting Sigrun | Awaiting Sigrun | Awaiting Sigrun | Blocked on case data |

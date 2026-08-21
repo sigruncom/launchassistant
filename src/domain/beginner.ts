@@ -25,7 +25,6 @@ export const EMAIL_LIST_SIZE_MAX = 100_000_000
 export const ORGANIC_SIGNUP_RATE_DEFAULT = 10
 export const ORGANIC_SIGNUP_RATE_MAX = 50
 export const BEGINNER_SHOW_UP_RATE_DEFAULT = 20
-export const BEGINNER_GROUP_JOIN_RATE_DEFAULT = 30
 export const EMAIL_REACH_SOURCE_ID = 'SIGRUN-REACH-2026-08-11' as const
 
 export type EmailReachTrace = {
@@ -69,7 +68,6 @@ export type BeginnerDraft = {
   conversionRatePercent: LaunchInputs['conversionRatePercent'] | ''
   recentResearch: BeginnerResearch | ''
   surveyResponses: string
-  launchCommunity: BeginnerYesNo | ''
 }
 
 const requiredWholeNumber = (label: string, maximum: number) =>
@@ -194,9 +192,6 @@ const beginnerAnswerShape = {
     })
     .transform((value) => value === 'yes'),
   surveyResponses: requiredWholeNumber('survey responses collected', 100_000),
-  launchCommunity: z.enum(beginnerYesNoValues, {
-    error: 'Choose whether this launch has a launch community.',
-  }),
 } satisfies z.ZodRawShape
 
 type BeginnerGoalDraft = {
@@ -288,7 +283,6 @@ export const beginnerBlank: BeginnerDraft = {
   conversionRatePercent: '',
   recentResearch: '',
   surveyResponses: '',
-  launchCommunity: '',
 }
 
 export const toBeginnerLaunchInputs = (answers: BeginnerAnswers): LaunchInputs =>
@@ -310,9 +304,8 @@ export const toBeginnerLaunchInputs = (answers: BeginnerAnswers): LaunchInputs =
     showUpBonusPlanned: answers.showUpBonusPlanned,
     recentResearch: answers.recentResearch,
     surveyResponses: answers.surveyResponses,
-    workshopGroup: answers.launchCommunity === 'yes' ? 'other' : 'none',
+    workshopGroup: 'none',
     conversionRatePercent: answers.conversionRatePercent,
     showUpRatePercent: answers.showUpRatePercent,
-    groupJoinRatePercent:
-      answers.launchCommunity === 'yes' ? BEGINNER_GROUP_JOIN_RATE_DEFAULT : null,
+    groupJoinRatePercent: null,
   })
