@@ -8,7 +8,6 @@ import { CurrencySelect } from './components/CurrencySelect'
 import { OfferEconomicsFields } from './components/OfferEconomicsFields'
 import { StepProgress } from './components/StepProgress'
 import { StrategyView } from './components/StrategyView'
-import { VariantNavigation } from './components/VariantNavigation'
 import { calculateLaunch } from './domain/calculator'
 import {
   currencyAmountLabel,
@@ -136,10 +135,9 @@ function App() {
       </div>
 
       <header className="site-header">
-        <a className="wordmark" href="#top" aria-label="Sigrun Launch Assistant home">
-          SIGRUN<span>/</span>LAUNCH ASSISTANT
+        <a className="wordmark" href="#top" aria-label="Sigrun Launch Planner home">
+          SIGRUN<span>/</span>LAUNCH PLANNER
         </a>
-        <VariantNavigation activeVariant="complete" />
       </header>
 
       <div className="hero" id="top">

@@ -31,8 +31,6 @@ const answerDraft = (overrides: Record<string, unknown> = {}) => ({
   replayOffered: 'yes',
   showUpBonusPlanned: 'no',
   conversionRatePercent: 2,
-  recentResearch: 'not-yet',
-  surveyResponses: '12',
   ...overrides,
 })
 
@@ -109,7 +107,7 @@ describe('beginner variant', () => {
     },
   )
 
-  it('keeps non-EUR methodology abstentions in the copied beginner plan', () => {
+  it('keeps coach notes and ad-budget language out of the member plan', () => {
     const answers = parsedAnswers({ currency: 'CAD' })
     const inputs = toBeginnerLaunchInputs(answers)
     const calculation = calculateLaunch(inputs)
@@ -120,10 +118,12 @@ describe('beginner variant', () => {
     )
     const copy = createBeginnerPlanCopy(inputs, calculation, strategy, trace)
 
-    expect(copy).toContain('Needs coach review:')
-    for (const decision of strategy.coachDecisions) {
-      expect(copy).toContain(`- ${decision}`)
-    }
+    expect(strategy.coachDecisions.length).toBeGreaterThan(0)
+    expect(copy).not.toContain('Needs coach review')
+    expect(copy).not.toMatch(/ad budget/i)
+    expect(copy).not.toMatch(/survey/i)
+    expect(copy).toContain('Invite your existing audience first')
+    expect(copy).toContain('Registrations still missing from the current email list')
   })
 
   it.each([
@@ -250,6 +250,9 @@ describe('beginner variant', () => {
     expect(inputs.replayOffered).toBe(false)
     expect(inputs.showUpBonusPlanned).toBe(true)
     expect(inputs.organicRegistrations).toBe(180)
+    expect(inputs.adBudget).toBe(0)
+    expect(inputs.recentResearch).toBe(true)
+    expect(inputs.surveyResponses).toBe(0)
   })
 
   it('omits community planning from Beginner without inventing a zero-percent rate', () => {

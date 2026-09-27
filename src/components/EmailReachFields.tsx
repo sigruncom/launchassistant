@@ -4,8 +4,6 @@ import {
   ORGANIC_SIGNUP_RATE_MAX,
   estimateOrganicRegistrationsFromEmailList,
 } from '../domain/beginner'
-import { SourceChip } from './SourceChip'
-
 type EmailReachFieldsProps = {
   emailListSize: string
   signupRatePercent: string
@@ -61,10 +59,6 @@ export function EmailReachFields({
           Ten percent is the starting point for most lists. Use a lower rate for a bigger or older
           list. A 50,000-person list produced 2,000 registrations, or 4%.
         </p>
-        <div className="source-list">
-          <SourceChip sourceId="SIGRUN-REACH-2026-08-11" />
-          <SourceChip sourceId="SIGRUN-REACH-2026-08-16" />
-        </div>
       </div>
 
       <div className="form-grid form-grid--2">
@@ -148,7 +142,7 @@ export function EmailReachFields({
             {estimate.toLocaleString()}
           </strong>
         )}
-        <small>Rounded to the nearest whole registration for this prototype.</small>
+        <small>Rounded to the nearest whole registration.</small>
       </output>
     </fieldset>
   )

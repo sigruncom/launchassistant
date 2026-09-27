@@ -4,15 +4,12 @@ import { EmailReachFields } from './components/EmailReachFields'
 import { CurrencySelect } from './components/CurrencySelect'
 import {
   ChoiceGroup,
-  DraftNumberField,
   ShowUpRateField,
 } from './components/Fields'
 import { OfferEconomicsFields } from './components/OfferEconomicsFields'
 import { StepProgress } from './components/StepProgress'
-import { VariantNavigation } from './components/VariantNavigation'
 import { calculateLaunch } from './domain/calculator'
 import {
-  beginnerAnswerSchema,
   beginnerAttendanceSchema,
   beginnerBlank,
   beginnerGoalFallbackErrors,
@@ -23,7 +20,6 @@ import {
   createEmailReachTrace,
   toBeginnerLaunchInputs,
   type BeginnerDraft,
-  type BeginnerResearch,
   type BeginnerYesNo,
 } from './domain/beginner'
 import { composeStrategy } from './domain/strategy'
@@ -38,18 +34,16 @@ const steps = [
   },
   { short: 'Workshop', kicker: 'Your format', title: 'Which workshop fits this audience?' },
   { short: 'Attendance', kicker: 'Live attendance', title: 'What show-up rate will you plan for?' },
-  { short: 'Sales case', kicker: 'The funnel', title: 'Which sales case should we use?' },
-  { short: 'Research', kicker: 'Audience evidence', title: 'How well do you know this audience?' },
-  { short: 'Plan', kicker: 'Your plan', title: 'A clear place to begin' },
+  { short: 'Sales rate', kicker: 'Who buys', title: 'What share of signups do you expect to buy?' },
 ] as const
 
-type StepIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6
+type StepIndex = 0 | 1 | 2 | 3 | 4 | 5
 
 function BeginnerApp() {
   const [draft, setDraft] = useState<BeginnerDraft>(beginnerBlank)
   const [activeStep, setActiveStep] = useState<StepIndex>(0)
   const [showErrors, setShowErrors] = useState(false)
-  const [announcement, setAnnouncement] = useState('Beginner planner ready. Nothing is saved.')
+  const [announcement, setAnnouncement] = useState('Launch Planner ready. Nothing is saved.')
   const errorSummaryRef = useRef<HTMLDivElement>(null)
   const stepHeadingRef = useRef<HTMLHeadingElement>(null)
   const resultMainRef = useRef<HTMLElement>(null)
@@ -71,12 +65,11 @@ function BeginnerApp() {
             beginnerWorkshopSchema.safeParse(resolvedDraft),
             beginnerAttendanceSchema.safeParse(resolvedDraft),
             beginnerSalesSchema.safeParse(resolvedDraft),
-            beginnerAnswerSchema.safeParse(resolvedDraft),
           ] as const)
         : null,
     [resolvedDraft],
   )
-  const finalValidation = validations?.[5]
+  const finalValidation = validations?.[4]
   const inputs = useMemo(
     () => (finalValidation?.success ? toBeginnerLaunchInputs(finalValidation.data) : null),
     [finalValidation],
@@ -103,7 +96,7 @@ function BeginnerApp() {
 
   const focusStepHeading = (step: StepIndex) => {
     window.requestAnimationFrame(() => {
-      if (step === 6) {
+      if (step === 5) {
         resultMainRef.current?.focus({ preventScroll: true })
         return
       }
@@ -113,7 +106,7 @@ function BeginnerApp() {
   }
 
   const validationForStep = (step: StepIndex) =>
-    step === 6 ? null : validations?.[step]
+    step === 5 ? null : validations?.[step]
 
   const moveTo = (step: StepIndex) => {
     if (step > activeStep) {
@@ -129,7 +122,7 @@ function BeginnerApp() {
     setShowErrors(false)
     setActiveStep(step)
     setAnnouncement(
-      step === 6 ? 'Your launch plan is ready.' : `Step ${step + 1} of 6: ${steps[step].short}`,
+      step === 5 ? 'Your launch plan is ready.' : `Step ${step + 1} of 5: ${steps[step].short}`,
     )
     focusStepHeading(step)
   }
@@ -139,11 +132,12 @@ function BeginnerApp() {
     economics.reset({ price: '', spotsToSell: '', revenueGoal: '' })
     setActiveStep(0)
     setShowErrors(false)
-    setAnnouncement('The beginner form was cleared. Nothing was retained.')
+    setAnnouncement('The form was cleared. Nothing was retained.')
     focusStepHeading(0)
   }
 
   const currentValidation = validationForStep(activeStep)
+  const currentInputStep = activeStep === 5 ? null : steps[activeStep]
   const errors = showErrors
     ? [
         ...new Set(
@@ -158,19 +152,13 @@ function BeginnerApp() {
 
   return (
     <div className="app-shell beginner-shell" id="top">
-      <div className="prototype-banner" role="note">
-        <span>Beginner prototype</span>
-        <p>A guided planning path · nothing you enter is saved</p>
-      </div>
-
       <header className="site-header">
-        <a className="wordmark" href="#top" aria-label="Sigrun beginner Launch Assistant home">
-          SIGRUN<span>/</span>LAUNCH ASSISTANT
+        <a className="wordmark" href="#top" aria-label="Sigrun Launch Planner home">
+          SIGRUN<span>/</span>LAUNCH PLANNER
         </a>
-        <VariantNavigation activeVariant="beginner" />
       </header>
 
-      {activeStep < 6 ? (
+      {currentInputStep ? (
         <div className="beginner-planner">
           <aside className="beginner-planner__intro" aria-labelledby="beginner-intro-title">
             <div className="beginner-hero">
@@ -179,18 +167,18 @@ function BeginnerApp() {
                 Build your launch plan<span className="red-dot">.</span>
               </h1>
               <p className="hero-copy">
-                Six short steps turn your inputs into one source-backed starting plan. EUR is
-                selected by default, and nothing you enter is saved.
+                Five short steps turn what you know into a starting plan. EUR is selected, and
+                nothing you enter is saved.
               </p>
-              <ul className="beginner-trust" aria-label="Beginner planner details">
-                <li>Six input steps</li>
-                <li>Editable assumptions</li>
-                <li>No model call</li>
+              <ul className="beginner-trust" aria-label="What this planner does">
+                <li>Five short steps</li>
+                <li>You can edit the assumptions</li>
+                <li>Nothing is saved</li>
               </ul>
             </div>
             <StepProgress
               activeStep={activeStep}
-              labels={steps.slice(0, 6).map((step) => step.short)}
+              labels={steps.map((step) => step.short)}
             />
           </aside>
 
@@ -202,10 +190,10 @@ function BeginnerApp() {
           >
             <div className="step-heading">
               <p className="step-kicker">
-                {activeStep + 1} / 6 — {steps[activeStep].kicker}
+                {activeStep + 1} / 5 — {currentInputStep.kicker}
               </p>
               <h2 id="beginner-step-title" tabIndex={-1} ref={stepHeadingRef}>
-                {steps[activeStep].title}
+                {currentInputStep.title}
               </h2>
             </div>
 
@@ -319,7 +307,7 @@ function BeginnerApp() {
             {activeStep === 4 ? (
               <div className="form-stack">
                 <ChoiceGroup<BeginnerDraft['conversionRatePercent']>
-                  legend="Workshop-registration-to-sale conversion"
+                  legend="Share of workshop signups who buy"
                   name="beginner-conversion"
                   value={draft.conversionRatePercent}
                   onChange={(value) => update('conversionRatePercent', value)}
@@ -328,32 +316,7 @@ function BeginnerApp() {
                     { value: 2, label: '2% · Planning' },
                     { value: 3, label: '3% · Benchmark' },
                   ]}
-                  hint="Applied to all workshop signups, whether or not they attend live."
-                />
-              </div>
-            ) : null}
-
-            {activeStep === 5 ? (
-              <div className="form-stack">
-                <ChoiceGroup<BeginnerResearch | ''>
-                  legend="Is recent client research confirmed?"
-                  name="beginner-research"
-                  value={draft.recentResearch}
-                  onChange={(value) => update('recentResearch', value)}
-                  columns={2}
-                  choices={[
-                    { value: 'yes', label: 'Yes', detail: 'Recent interviews or survey evidence' },
-                    { value: 'not-yet', label: 'Not yet', detail: 'Make this a next step' },
-                  ]}
-                />
-                <DraftNumberField
-                  id="beginner-survey-responses"
-                  label="Survey responses collected"
-                  hint="Enter 0 if your evidence comes from interviews. The outline sets 10 as the survey minimum and 100 as the goal."
-                  placeholder="Enter a whole number"
-                  max={100_000}
-                  value={draft.surveyResponses}
-                  onChange={(value) => update('surveyResponses', value)}
+                  hint="This counts everyone who signs up, including people who do not attend live."
                 />
               </div>
             ) : null}
@@ -375,7 +338,7 @@ function BeginnerApp() {
                 type="button"
                 onClick={() => moveTo((activeStep + 1) as StepIndex)}
               >
-                {activeStep === 5 ? 'Build my plan' : 'Continue'}{' '}
+                {activeStep === 4 ? 'Build my plan' : 'Continue'}{' '}
                 <span aria-hidden="true">→</span>
               </button>
             </div>
@@ -384,7 +347,7 @@ function BeginnerApp() {
         </div>
       ) : null}
 
-      {activeStep === 6 && inputs && calculation && strategy && emailReachTrace ? (
+      {activeStep === 5 && inputs && calculation && strategy && emailReachTrace ? (
         <main className="beginner-results-main" tabIndex={-1} ref={resultMainRef}>
           <BeginnerResults
             inputs={inputs}
@@ -401,8 +364,7 @@ function BeginnerApp() {
 
       <footer className="site-footer">
         <div className="wordmark wordmark--footer">SIGRUN</div>
-        <p>Guided methodology prototype · visible editable defaults · nothing is saved</p>
-        <span>Calculator {calculation?.calculatorVersion ?? 'not started'}</span>
+        <p>Nothing you enter is saved.</p>
       </footer>
     </div>
   )

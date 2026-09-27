@@ -1,4 +1,4 @@
-# Launch Assistant
+# Launch Planner
 
 Private product repository for Sigrun's launch calculator and methodology-grounded strategy builder.
 
@@ -6,8 +6,8 @@ Private product repository for Sigrun's launch calculator and methodology-ground
 
 The repository contains one disposable internal demo with two selectable planner experiences for validating the Launch & Sell methodology before production architecture is introduced:
 
-- **Beginner:** six short input steps in a compact laptop-height planner, with EUR, an editable 10% email-registration rate and an editable 20% show-up rate as visible starting values. Community planning is omitted to keep this path simple.
-- **Complete:** eight topic-based input steps followed by the full methodology-review surface.
+- **Beginner:** five short input steps in a compact laptop-height planner, with EUR, an editable 10% email-registration rate and an editable 20% show-up rate as visible starting values. Community planning and the survey step are omitted. This is the member-facing path.
+- **Complete:** eight topic-based input steps followed by the full methodology-review surface. It stays available at `?planner=complete` and is not linked from the member planner.
 
 The prototype:
 
@@ -27,7 +27,7 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The bare URL opens the guided Beginner planner. Use the top navigation—or open `?planner=beginner` or `?planner=complete` directly—to switch experiences. Switching versions reloads the page and clears the in-memory form.
+Open the local URL printed by Vite. The bare URL opens the Launch Planner. `?planner=beginner` is the same page. `?planner=complete` opens the internal review path. Switching versions reloads the page and clears the in-memory form.
 
 To verify the complete demo:
 

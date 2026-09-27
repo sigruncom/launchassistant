@@ -19,7 +19,6 @@ import {
   type CurrencySelectValue,
 } from './currency'
 
-export const beginnerResearchValues = ['yes', 'not-yet'] as const
 export const beginnerYesNoValues = ['yes', 'no'] as const
 export const EMAIL_LIST_SIZE_MAX = 100_000_000
 export const ORGANIC_SIGNUP_RATE_DEFAULT = 10
@@ -39,7 +38,6 @@ export type EmailReachTrace = {
   sourceId: typeof EMAIL_REACH_SOURCE_ID
 }
 
-export type BeginnerResearch = (typeof beginnerResearchValues)[number]
 export type BeginnerYesNo = (typeof beginnerYesNoValues)[number]
 
 export const beginnerGoalFallbackErrors = (
@@ -66,8 +64,6 @@ export type BeginnerDraft = {
   replayOffered: BeginnerYesNo | ''
   showUpBonusPlanned: BeginnerYesNo | ''
   conversionRatePercent: LaunchInputs['conversionRatePercent'] | ''
-  recentResearch: BeginnerResearch | ''
-  surveyResponses: string
 }
 
 const requiredWholeNumber = (label: string, maximum: number) =>
@@ -83,7 +79,7 @@ const requiredWholeNumber = (label: string, maximum: number) =>
     )
     .refine(
       (value) => value === '' || !Number.isFinite(Number(value)) || Number(value) <= maximum,
-      { message: `${label[0].toUpperCase()}${label.slice(1)} is too large for this prototype.` },
+      { message: `${label[0].toUpperCase()}${label.slice(1)} is too large to plan here.` },
     )
     .transform(Number)
 
@@ -181,17 +177,8 @@ const beginnerSalesShape = {
       z.literal(conversionValues[1]),
       z.literal(conversionValues[2]),
     ],
-    { error: 'Choose a 1%, 2% or 3% sales case.' },
+    { error: 'Choose 1%, 2% or 3%.' },
   ),
-} satisfies z.ZodRawShape
-
-const beginnerAnswerShape = {
-  recentResearch: z
-    .enum(beginnerResearchValues, {
-      error: 'Choose Yes or Not yet for recent client research.',
-    })
-    .transform((value) => value === 'yes'),
-  surveyResponses: requiredWholeNumber('survey responses collected', 100_000),
 } satisfies z.ZodRawShape
 
 type BeginnerGoalDraft = {
@@ -258,13 +245,7 @@ export const beginnerSalesSchema = createBeginnerSchema({
   ...beginnerSalesShape,
 })
 
-export const beginnerAnswerSchema = createBeginnerSchema({
-  ...beginnerReachShape,
-  ...beginnerWorkshopShape,
-  ...beginnerAttendanceShape,
-  ...beginnerSalesShape,
-  ...beginnerAnswerShape,
-})
+export const beginnerAnswerSchema = beginnerSalesSchema
 
 export type BeginnerAnswers = z.output<typeof beginnerAnswerSchema>
 
@@ -281,8 +262,6 @@ export const beginnerBlank: BeginnerDraft = {
   replayOffered: '',
   showUpBonusPlanned: '',
   conversionRatePercent: '',
-  recentResearch: '',
-  surveyResponses: '',
 }
 
 export const toBeginnerLaunchInputs = (answers: BeginnerAnswers): LaunchInputs =>
@@ -302,8 +281,10 @@ export const toBeginnerLaunchInputs = (answers: BeginnerAnswers): LaunchInputs =
     workshopDurationDays: answers.workshopDurationDays,
     replayOffered: answers.replayOffered,
     showUpBonusPlanned: answers.showUpBonusPlanned,
-    recentResearch: answers.recentResearch,
-    surveyResponses: answers.surveyResponses,
+    // The survey step is not part of this planner. Mark research as present so the
+    // shared strategy does not add a survey requirement the member was never asked.
+    recentResearch: true,
+    surveyResponses: 0,
     workshopGroup: 'none',
     conversionRatePercent: answers.conversionRatePercent,
     showUpRatePercent: answers.showUpRatePercent,

@@ -10,12 +10,12 @@ const appModule = variant === 'beginner' ? import('./BeginnerApp') : import('./A
 const metadata =
   variant === 'beginner'
     ? {
-        title: 'Launch Assistant — Beginner Prototype',
-        description: 'A calm, beginner-friendly Launch & Sell planning prototype.',
+        title: 'Launch Planner',
+        description: 'Plan a Launch & Sell launch from your list, price, and workshop.',
       }
     : {
-        title: 'Launch Assistant — Complete Prototype',
-        description: 'A complete Launch & Sell planning and methodology-review prototype.',
+        title: 'Launch Planner',
+        description: 'Plan a Launch & Sell launch from your list, price, and workshop.',
       }
 
 document.title = metadata.title
