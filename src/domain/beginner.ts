@@ -211,6 +211,21 @@ const createBeginnerSchema = <Shape extends z.ZodRawShape>(shape: Shape) =>
       if (revenueError) {
         context.addIssue({ code: 'custom', path: ['revenueGoal'], message: revenueError })
       }
+
+      const workshop = value as BeginnerGoalDraft & {
+        audienceContext?: string
+        workshopDurationDays?: number
+      }
+      if (
+        (workshop.audienceContext === 'b2b' || workshop.audienceContext === 'hobby') &&
+        workshop.workshopDurationDays !== 1
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['workshopDurationDays'],
+          message: 'B2B and hobby audiences use a one-day workshop.',
+        })
+      }
     })
     .transform((value) => {
       const goal = value as BeginnerGoalDraft
@@ -261,7 +276,7 @@ export const beginnerBlank: BeginnerDraft = {
   showUpRatePercent: String(BEGINNER_SHOW_UP_RATE_DEFAULT),
   replayOffered: '',
   showUpBonusPlanned: '',
-  conversionRatePercent: '',
+  conversionRatePercent: 3,
 }
 
 export const toBeginnerLaunchInputs = (answers: BeginnerAnswers): LaunchInputs =>

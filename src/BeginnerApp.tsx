@@ -250,24 +250,43 @@ function BeginnerApp() {
                   legend="Which audience type fits best?"
                   name="beginner-audience-context"
                   value={draft.audienceContext}
-                  onChange={(value) => update('audienceContext', value)}
+                  onChange={(value) => {
+                    setDraft((current) => ({
+                      ...current,
+                      audienceContext: value,
+                      workshopDurationDays: value === 'other' ? '' : 1,
+                    }))
+                  }}
                   choices={[
                     { value: 'b2b', label: 'B2B', detail: 'Time is often the main constraint' },
                     { value: 'hobby', label: 'Hobby', detail: 'Often a lower-priced offer' },
                     { value: 'other', label: 'Other', detail: 'Consumer or mixed audience' },
                   ]}
                 />
-                <ChoiceGroup<BeginnerDraft['workshopDurationDays']>
-                  legend="Choose the workshop length"
-                  name="beginner-workshop-duration"
-                  value={draft.workshopDurationDays}
-                  onChange={(value) => update('workshopDurationDays', value)}
-                  columns={2}
-                  choices={[
-                    { value: 1, label: 'One day', detail: 'Often suits B2B or lower-priced hobby audiences' },
-                    { value: 3, label: 'Three days', detail: 'Often suits offers above €1,000' },
-                  ]}
-                />
+                {draft.audienceContext === 'b2b' || draft.audienceContext === 'hobby' ? (
+                  <fieldset className="choice-fieldset">
+                    <legend>Workshop length</legend>
+                    <div className="choice-grid">
+                      <div className="choice-card choice-card--selected choice-card--set">
+                        <span className="choice-title">One day</span>
+                        <span className="choice-detail">Set for this audience</span>
+                      </div>
+                    </div>
+                  </fieldset>
+                ) : null}
+                {draft.audienceContext === 'other' ? (
+                  <ChoiceGroup<BeginnerDraft['workshopDurationDays']>
+                    legend="Choose the workshop length"
+                    name="beginner-workshop-duration"
+                    value={draft.workshopDurationDays}
+                    onChange={(value) => update('workshopDurationDays', value)}
+                    columns={2}
+                    choices={[
+                      { value: 1, label: 'One day', detail: 'One live session' },
+                      { value: 3, label: 'Three days', detail: 'More time, often for offers above €1,000' },
+                    ]}
+                  />
+                ) : null}
               </div>
             ) : null}
 
@@ -316,7 +335,7 @@ function BeginnerApp() {
                     { value: 2, label: '2% · Planning' },
                     { value: 3, label: '3% · Benchmark' },
                   ]}
-                  hint="This counts everyone who signs up, including people who do not attend live."
+                  hint="3% is the starting point. Change it if you want a more cautious plan. This counts everyone who signs up, including people who do not attend live."
                 />
               </div>
             ) : null}

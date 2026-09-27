@@ -890,6 +890,12 @@ button:disabled {
   background: rgba(204, 0, 0, 0.045);
 }
 
+.choice-card--set,
+.choice-card--set:hover {
+  cursor: default;
+  transform: none;
+}
+
 .choice-card--selected::after {
   position: absolute;
   top: 13px;

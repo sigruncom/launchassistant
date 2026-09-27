@@ -61,15 +61,21 @@ describe('beginner variant', () => {
     expect(appVariantHref('complete')).toBe('?planner=complete')
   })
 
-  it('starts with only the approved EUR, email signup and show-up defaults', () => {
+  it('starts with only the approved EUR, email signup, show-up and 3% sales defaults', () => {
     expect(beginnerBlank.currency).toBe('EUR')
     expect(beginnerBlank.organicSignupRatePercent).toBe(String(ORGANIC_SIGNUP_RATE_DEFAULT))
     expect(beginnerBlank.showUpRatePercent).toBe(String(BEGINNER_SHOW_UP_RATE_DEFAULT))
+    expect(beginnerBlank.conversionRatePercent).toBe(3)
     expect(
       Object.entries(beginnerBlank)
         .filter(
           ([key]) =>
-            !['currency', 'organicSignupRatePercent', 'showUpRatePercent'].includes(key),
+            ![
+              'currency',
+              'organicSignupRatePercent',
+              'showUpRatePercent',
+              'conversionRatePercent',
+            ].includes(key),
         )
         .every(([, value]) => value === ''),
     ).toBe(true)
@@ -285,18 +291,36 @@ describe('beginner variant', () => {
     expect(calculation.selected.paidRegistrationGap).toBe(470)
   })
 
-  it('always respects the participant workshop choice', () => {
-    const oneDayInputs = toBeginnerLaunchInputs(
-      parsedAnswers({ workshopDurationDays: 1, audienceContext: 'other' }),
+  it('uses one day for B2B and hobby, and either length for other audiences', () => {
+    expect(
+      beginnerAnswerSchema.safeParse(
+        answerDraft({ audienceContext: 'b2b', workshopDurationDays: 3 }),
+      ).success,
+    ).toBe(false)
+    expect(
+      beginnerAnswerSchema.safeParse(
+        answerDraft({ audienceContext: 'hobby', workshopDurationDays: 3 }),
+      ).success,
+    ).toBe(false)
+
+    const b2b = toBeginnerLaunchInputs(
+      parsedAnswers({ audienceContext: 'b2b', workshopDurationDays: 1 }),
     )
-    const threeDayInputs = toBeginnerLaunchInputs(
-      parsedAnswers({ workshopDurationDays: 3, audienceContext: 'b2b' }),
+    const hobby = toBeginnerLaunchInputs(
+      parsedAnswers({ audienceContext: 'hobby', workshopDurationDays: 1 }),
+    )
+    const otherOneDay = toBeginnerLaunchInputs(
+      parsedAnswers({ audienceContext: 'other', workshopDurationDays: 1 }),
+    )
+    const otherThreeDays = toBeginnerLaunchInputs(
+      parsedAnswers({ audienceContext: 'other', workshopDurationDays: 3 }),
     )
 
-    expect(composeStrategy(oneDayInputs, calculateLaunch(oneDayInputs)).workshopFormat).toBe(
-      'One-day workshop',
-    )
-    expect(composeStrategy(threeDayInputs, calculateLaunch(threeDayInputs)).workshopFormat).toBe(
+    expect(b2b.workshopDurationDays).toBe(1)
+    expect(hobby.workshopDurationDays).toBe(1)
+    expect(otherOneDay.workshopDurationDays).toBe(1)
+    expect(otherThreeDays.workshopDurationDays).toBe(3)
+    expect(composeStrategy(otherThreeDays, calculateLaunch(otherThreeDays)).workshopFormat).toBe(
       'Three-day workshop',
     )
   })
